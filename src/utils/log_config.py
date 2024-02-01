@@ -1,5 +1,10 @@
 """
 Module for logging conventions
+
+```python
+from src.utils import log_config as logging
+logger = logging.getLogger(__name__)
+```
 """
 
 import logging

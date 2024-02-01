@@ -1,5 +1,5 @@
-1hmd.pdb
-2fe3.pdb
-3lq0.pdb
-4PER.pdb
-5vyr.pdb
+1hmd
+2fe3
+3lq0
+4PER
+5vyr

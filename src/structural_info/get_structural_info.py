@@ -167,9 +167,7 @@ def get_structural_info_from_dataset(
     vec_dict = {}
 
     with Progress() as bar:
-        task = bar.add_task(
-            "Structural Info", total=processor.count(), suffix="%(percent).1f%%"
-        )
+        task = bar.add_task("Structural Info", total=processor.count())
         with h5py.File(hdf5_out, "r+") as f:
             n = 0
             for structural_info in processor.execute(
@@ -194,6 +192,7 @@ def get_structural_info_from_dataset(
                         angles,
                         norm_vecs,
                     ) = (*structural_info,)
+                    pdb = os.path.basename(pdb)
 
                     if angle_db is not None or vec_db is not None:
                         for res_id, curr_angles, curr_norm_vecs in zip(

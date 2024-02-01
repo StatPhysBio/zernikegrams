@@ -157,7 +157,7 @@ def get_chi_angles_and_norm_vecs(
                     residue[atom_names[i][1]],
                     residue[atom_names[i][2]],
                 )
-    except Exception as e:
+    except Exception:
         logger.warning(
             (f"Failed to calculate chi angles/normal vectors for a {resname} in {pdb} with the error below. " 
               "The remaining structural info for this protein, including other chi angles, is likely still valid."),
@@ -326,9 +326,9 @@ def pad(arr: npt.NDArray, padded_length: int = 100) -> npt.NDArray:
 
     # check that the padding is large enough to accomdate the data
     if padded_length < orig_length:
-        print(
-            "Error: Padded length of {}".format(padded_length),
-            "is smaller than original length of array {}".format(orig_length),
+        logger.warn(
+            f"Error: Padded length of {padded_length}",
+            f"is smaller than original length of array {orig_length}",
         )
 
     # create padded array
