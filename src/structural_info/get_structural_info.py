@@ -160,18 +160,27 @@ def get_structural_info_from_dataset(
     L = np.max([processor.pdb_name_length, 5])
     logger.info(f"Maximum pdb name L = {L}")
 
-    dt_arr = [
-        ("pdb", f"S{L}", ()),
-        ("atom_names", "S4", (max_atoms)),
-        ("elements", "S2", (max_atoms)),
-        ("res_ids", f"S{L}", (max_atoms, 6)),
-        ("coords", "f4", (max_atoms, 3)),
-    ]
-    if SASA:
-        dt_arr.append(("SASAs", "f4", (max_atoms)))
-    if charge:
-        dt_arr.append(("charges", "f4", (max_atoms)))
-    dt = np.dtype(dt_arr)
+    # dt_arr = [
+    #     ("pdb", f"S{L}", ()),
+    #     ("atom_names", "S4", (max_atoms)),
+    #     ("elements", "S2", (max_atoms)),
+    #     ("res_ids", f"S{L}", (max_atoms, 6)),
+    #     ("coords", "f4", (max_atoms, 3)),
+    # ]
+    # if SASA:
+    #     dt_arr.append(("SASAs", "f4", (max_atoms)))
+    # if charge:
+    #     dt_arr.append(("charges", "f4", (max_atoms)))
+    # dt = np.dtype(dt_arr)
+    dt = np.dtype([
+        ('res_id', f'S{L}',(6)),
+        ('atom_names', 'S4', (max_atoms)),
+        ('elements', 'S2', (max_atoms)),
+        ('res_ids', f'S{L}', (max_atoms,6)),
+        ('coords', 'f4', (max_atoms,3)),
+        ('SASAs', 'f4', (max_atoms)),
+        ('charges', 'f4', (max_atoms)),
+    ])
 
     with h5py.File(hdf5_out, "w") as f:
         f.create_dataset(
@@ -235,7 +244,7 @@ def get_structural_info_from_dataset(
                         coords,
                         sasas,
                         charges,
-                    )[0:len_dt]
+                    ) #[0:len_dt]
 
                     n += 1
                 except Exception as e:
