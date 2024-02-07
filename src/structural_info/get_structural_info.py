@@ -75,6 +75,18 @@ def parse_args():
     parser.add_argument(
         "--vec_db", type=str, help="path to normal vector database", default=None
     )
+    parser.add_argument(
+        "--SASA",
+        action="store_true",
+        default=False,
+        help="If present, SASAs are calculated for each atom.",
+    )
+    parser.add_argument(
+        "--charge",
+        action="store_true",
+        default=False,
+        help="If present, charges are calculated for each atom.",
+    )
 
     args = parser.parse_args()
     if args.pdb_dir is None and args.foldcomp is None:
@@ -95,6 +107,8 @@ def get_structural_info_from_dataset(
     parallelism: int,
     angle_db: str = None,
     vec_db: str = None,
+    SASA: bool = True,
+    charge: bool = True,
 ) -> None:
     """
     Parallel processing of PDBs into structural info
@@ -121,6 +135,10 @@ def get_structural_info_from_dataset(
     vec_db : str | None
         If set, path to sqlite db to store normal vectors.
         Keys will be residue IDs and values will be up to four normal vectors
+    SASA: bool
+        Whether or not to calculate SASAs
+    charge: bool
+        Whether or not to calculate charges
     """
     if os.path.isdir(input_path):
         pdb_dir = input_path
@@ -142,17 +160,18 @@ def get_structural_info_from_dataset(
     L = np.max([processor.pdb_name_length, 5])
     logger.info(f"Maximum pdb name L = {L}")
 
-    dt = np.dtype(
-        [
-            ("pdb", f"S{L}", ()),
-            ("atom_names", "S4", (max_atoms)),
-            ("elements", "S2", (max_atoms)),
-            ("res_ids", f"S{L}", (max_atoms, 6)),
-            ("coords", "f4", (max_atoms, 3)),
-            ("SASAs", "f4", (max_atoms)),
-            ("charges", "f4", (max_atoms)),
-        ]
-    )
+    dt_arr = [
+        ("pdb", f"S{L}", ()),
+        ("atom_names", "S4", (max_atoms)),
+        ("elements", "S2", (max_atoms)),
+        ("res_ids", f"S{L}", (max_atoms, 6)),
+        ("coords", "f4", (max_atoms, 3)),
+    ]
+    if SASA:
+        dt_arr.append(("SASAs", "f4", (max_atoms)))
+    if charge:
+        dt_arr.append(("charges", "f4", (max_atoms)))
+    dt = np.dtype(dt_arr)
 
     with h5py.File(hdf5_out, "w") as f:
         f.create_dataset(
@@ -173,7 +192,12 @@ def get_structural_info_from_dataset(
             for structural_info in processor.execute(
                 callback=get_padded_structural_info,
                 limit=None,
-                params={"padded_length": max_atoms},
+                params={
+                    "padded_length": max_atoms,
+                    "SASA": SASA,
+                    "charge": charge,
+                    "angles": vec_db is not None or angle_db is not None,
+                },
                 parallelism=parallelism,
             ):
                 try:
@@ -202,6 +226,7 @@ def get_structural_info_from_dataset(
                             angle_dict[res_id] = curr_angles.tolist()
                             vec_dict[res_id] = curr_norm_vecs.tolist()
 
+                    len_dt = len(dt_arr)
                     f[output_dataset_name][n] = (
                         pdb,
                         atom_names,
@@ -210,14 +235,18 @@ def get_structural_info_from_dataset(
                         coords,
                         sasas,
                         charges,
-                    )
+                    )[0:len_dt]
 
                     n += 1
                 except Exception as e:
                     logger.warning("Failed to write PDB with the following error:")
                     logger.exception(e)
                 finally:
-                    bar.update(task, advance=1, description=f"Structural Info: {n}/{processor.count()}")
+                    bar.update(
+                        task,
+                        advance=1,
+                        description=f"Structural Info: {n}/{processor.count()}",
+                    )
 
             logger.info(f"PDBs successfully processed: {n}")
             f[output_dataset_name].resize((n,))
@@ -240,7 +269,11 @@ def get_structural_info_from_dataset(
 
 
 def get_padded_structural_info(
-    pdb_file: str, padded_length: int = 200000
+    pdb_file: str,
+    padded_length: int = 200000,
+    SASA: bool = True,
+    charge: bool = True,
+    angles: bool = True,
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
 ]:
@@ -251,6 +284,9 @@ def get_padded_structural_info(
     ----------
     pdb_file: path to file with pdb
     padded_length: size to pad to
+    SASA: Whether or not to calculate SASA
+    charge: Whether or not to calculate charge
+    angles: Whether or not to calculate anglges
 
     Returns
     -------
@@ -268,7 +304,12 @@ def get_padded_structural_info(
     """
 
     try:
-        pdb, ragged_structural_info = get_structural_info_from_protein(pdb_file)
+        pdb, ragged_structural_info = get_structural_info_from_protein(
+            pdb_file,
+            calculate_SASA=SASA,
+            calculate_charge=charge,
+            calculate_angles=angles,
+        )
 
         mat_structural_info = pad_structural_info(
             ragged_structural_info, padded_length=padded_length
@@ -308,6 +349,8 @@ def main():
         args.parallelism,
         args.angle_db,
         args.vec_db,
+        args.SASA,
+        args.charge,
     )
 
     logger.info(f"Total time = {time.time() - start_time:.2f} seconds")

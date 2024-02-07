@@ -12,7 +12,7 @@ def test_get_chi_angle_basic():
     expected = -90
     chi = get_chi_angle(plane_norm_1, plane_norm_2, a2, a3)
 
-    assert expected == chi
+    assert np.allclose(expected, chi)
 
 
 def test_get_chi_angle_sign_flip1():
@@ -25,7 +25,7 @@ def test_get_chi_angle_sign_flip1():
     expected = 90
     chi = get_chi_angle(plane_norm_1, plane_norm_2, a2, a3)
 
-    assert expected == chi
+    assert np.allclose(expected, chi)
 
 
 def test_get_chi_angle_sign_flip2():
@@ -39,7 +39,7 @@ def test_get_chi_angle_sign_flip2():
     expected = 90
     chi = get_chi_angle(plane_norm_1, plane_norm_2, a2, a3)
 
-    assert expected == chi
+    assert np.allclose(expected, chi)
 
 
 def test_chi_angle_range_fuzzy():

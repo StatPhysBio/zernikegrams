@@ -16,5 +16,5 @@ def pdb_list_from_foldcomp(foldcomp: str) -> List[str]:
     Create a list of pdb files from a give foldcomp db file
     """
     file = f"{foldcomp}.lookup"
-    lines = [line.split() for line in file.readlines()]
+    lines = [line.split() for line in open(file).readlines()]
     return [ID for (_, ID, _) in lines]

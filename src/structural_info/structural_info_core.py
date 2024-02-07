@@ -98,12 +98,12 @@ def get_chi_angle(
     """
     sign_vec = a3 - a2
     sign_with_magnitude = np.dot(sign_vec, np.cross(plane_norm_1, plane_norm_2))
-    sign = sign_with_magnitude / np.abs(sign_with_magnitude)
+    sign = sign_with_magnitude / (np.abs(sign_with_magnitude) + 1e-6)
 
     dot = np.dot(plane_norm_1, plane_norm_2) / (
         np.linalg.norm(plane_norm_1) * np.linalg.norm(plane_norm_2)
     )
-    chi_angle = sign * np.arccos(dot)
+    chi_angle = sign * np.arccos(dot * 0.9999)
 
     return np.degrees(chi_angle)
 
@@ -159,9 +159,11 @@ def get_chi_angles_and_norm_vecs(
                 )
     except Exception:
         logger.warning(
-            (f"Failed to calculate chi angles/normal vectors for a {resname} in {pdb} with the error below. " 
-              "The remaining structural info for this protein, including other chi angles, is likely still valid."),
-              exc_info=True
+            (
+                f"Failed to calculate chi angles/normal vectors for a {resname} in {pdb} with the error below. "
+                "The remaining structural info for this protein, including other chi angles, is likely still valid."
+            ),
+            exc_info=True,
         )
         # returns chis and vecs empty
         vecs = np.full((5, 3), np.nan, dtype=float)
@@ -174,11 +176,15 @@ def get_structural_info_from_protein(
     pdb_file: str,
     remove_nonwater_hetero: bool = False,
     remove_waters: bool = True,
+    calculate_SASA: bool = True,
+    calculate_charge: bool = True,
+    calculate_angles: bool = True,
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
     Params:
         - pdb_file: path to pdb file
         - remove_nonwater_hetero, remove_waters: whether or not to remove certain atoms
+        - calculate_X: if set to false, go faster
 
     Returns:
         Tuple of (pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs )
@@ -202,8 +208,9 @@ def get_structural_info_from_protein(
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
 
-    # Calculates SASAs with biopython; each atom will have a .sasa attribute
-    SASA.ShrakeRupley().compute(structure, level="A")
+    if calculate_SASA:
+        # Calculates SASAs with biopython; each atom will have a .sasa attribute
+        SASA.ShrakeRupley().compute(structure, level="A")
 
     # lists for each type of information to obtain
     atom_names = []
@@ -260,26 +267,29 @@ def get_structural_info_from_protein(
         elements.append(element)
         res_ids.append(res_id)
         coords.append(coord)
-        sasas.append(atom.sasa)
+        if calculate_SASA:
+            sasas.append(atom.sasa)
 
-        res_charges = CHARGES_AMBER99SB[residue]
-        if isinstance(res_charges, dict):
-            charge = res_charges[atom_name_unpadded.upper()]
-        elif isinstance(res_charges, float) or isinstance(res_charges, int):
-            charge = res_charges
-        else:
-            raise ValueError(
-                f"Unknown charge type: {type(res_charges)}. Something must be wrong."
-            )
-        charges.append(charge)
+        if calculate_charge:
+            res_charges = CHARGES_AMBER99SB[residue]
+            if isinstance(res_charges, dict):
+                charge = res_charges[atom_name_unpadded.upper()]
+            elif isinstance(res_charges, float) or isinstance(res_charges, int):
+                charge = res_charges
+            else:
+                raise ValueError(
+                    f"Unknown charge type: {type(res_charges)}. Something must be wrong."
+                )
+            charges.append(charge)
 
         k += 1
 
-    for res_key, (resname, atoms) in chi_atoms.items():
-        res_ids_per_residue.append(np.array([*res_key], dtype=f"S{L}"))
-        chis, norms = get_chi_angles_and_norm_vecs(resname, atoms, pdb)
-        angles.append(chis)
-        vecs.append(norms)
+    if calculate_angles:
+        for res_key, (resname, atoms) in chi_atoms.items():
+            res_ids_per_residue.append(np.array([*res_key], dtype=f"S{L}"))
+            chis, norms = get_chi_angles_and_norm_vecs(resname, atoms, pdb)
+            angles.append(chis)
+            vecs.append(norms)
 
     atom_names = np.array(atom_names, dtype="|S4")
     elements = np.array(elements, dtype="S1")
