@@ -34,6 +34,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--hdf5_out",
+        "-o",
         type=str,
         help="Output hdf5 filename, where structural info will be stored.",
         required=True,
@@ -60,7 +61,7 @@ def parse_args():
         help="Path to foldcomp file containing compressed PDBs. Required if --pdb_dir and --pdb_list_file not set",
     )
     parser.add_argument(
-        "--parallelism", type=int, help="Maximum number of CPU cores to use.", default=4
+        "--parallelism", "-p", type=int, help="Maximum number of CPU cores to use.", default=4
     )
     parser.add_argument(
         "--max_atoms",
@@ -77,15 +78,24 @@ def parse_args():
     )
     parser.add_argument(
         "--SASA",
+        "-S",
         action="store_true",
         default=False,
         help="If present, SASAs are calculated for each atom.",
     )
     parser.add_argument(
         "--charge",
+        "-c",
         action="store_true",
         default=False,
         help="If present, charges are calculated for each atom.",
+    )
+    parser.add_argument(
+        "--handle_multi_structures",
+        "-m",
+        default="warn",
+        choices=["crash", "warn", "allow"],
+        help="Behavior for handling PDBs with multiple structures",
     )
 
     args = parser.parse_args()
@@ -109,6 +119,7 @@ def get_structural_info_from_dataset(
     vec_db: str = None,
     SASA: bool = True,
     charge: bool = True,
+    handle_multi_structures: str = "warn",
 ) -> None:
     """
     Parallel processing of PDBs into structural info
@@ -139,6 +150,8 @@ def get_structural_info_from_dataset(
         Whether or not to calculate SASAs
     charge: bool
         Whether or not to calculate charges
+    handle_multi_structures
+        Behavior for handling PDBs with multiple structures
     """
     if os.path.isdir(input_path):
         pdb_dir = input_path
@@ -173,7 +186,7 @@ def get_structural_info_from_dataset(
     #     dt_arr.append(("charges", "f4", (max_atoms)))
     # dt = np.dtype(dt_arr)
     dt = np.dtype([
-        ('res_id', f'S{L}',(6)),
+        ('pdb', f'S{L}',()),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S2', (max_atoms)),
         ('res_ids', f'S{L}', (max_atoms,6)),
@@ -198,6 +211,7 @@ def get_structural_info_from_dataset(
         task = bar.add_task("Structural Info", total=processor.count())
         with h5py.File(hdf5_out, "r+") as f:
             n = 0
+            n_multimodel = 0
             for structural_info in processor.execute(
                 callback=get_padded_structural_info,
                 limit=None,
@@ -206,6 +220,7 @@ def get_structural_info_from_dataset(
                     "SASA": SASA,
                     "charge": charge,
                     "angles": vec_db is not None or angle_db is not None,
+                    "multi_struct": handle_multi_structures,
                 },
                 parallelism=parallelism,
             ):
@@ -224,8 +239,10 @@ def get_structural_info_from_dataset(
                         res_ids_per_residue,
                         angles,
                         norm_vecs,
+                        multi_model,
                     ) = (*structural_info,)
-                    pdb = os.path.basename(pdb)
+
+                    n_multimodel += multi_model[0]
 
                     if angle_db is not None or vec_db is not None:
                         for res_id, curr_angles, curr_norm_vecs in zip(
@@ -235,7 +252,6 @@ def get_structural_info_from_dataset(
                             angle_dict[res_id] = curr_angles.tolist()
                             vec_dict[res_id] = curr_norm_vecs.tolist()
 
-                    len_dt = len(dt_arr)
                     f[output_dataset_name][n] = (
                         pdb,
                         atom_names,
@@ -244,7 +260,7 @@ def get_structural_info_from_dataset(
                         coords,
                         sasas,
                         charges,
-                    ) #[0:len_dt]
+                    )  # [0:len(dt_arr)]
 
                     n += 1
                 except Exception as e:
@@ -256,6 +272,9 @@ def get_structural_info_from_dataset(
                         advance=1,
                         description=f"Structural Info: {n}/{processor.count()}",
                     )
+
+            if handle_multi_structures in ("warn", "allow"):
+                logger.info(f"PDBs with multiple models: {n_multimodel}")
 
             logger.info(f"PDBs successfully processed: {n}")
             f[output_dataset_name].resize((n,))
@@ -283,6 +302,7 @@ def get_padded_structural_info(
     SASA: bool = True,
     charge: bool = True,
     angles: bool = True,
+    multi_struct: str = "warn",
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
 ]:
@@ -296,6 +316,7 @@ def get_padded_structural_info(
     SASA: Whether or not to calculate SASA
     charge: Whether or not to calculate charge
     angles: Whether or not to calculate anglges
+    multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns
     -------
@@ -318,6 +339,7 @@ def get_padded_structural_info(
             calculate_SASA=SASA,
             calculate_charge=charge,
             calculate_angles=angles,
+            multi_struct=multi_struct,
         )
 
         mat_structural_info = pad_structural_info(
@@ -360,6 +382,7 @@ def main():
         args.vec_db,
         args.SASA,
         args.charge,
+        args.handle_multi_structures,
     )
 
     logger.info(f"Total time = {time.time() - start_time:.2f} seconds")

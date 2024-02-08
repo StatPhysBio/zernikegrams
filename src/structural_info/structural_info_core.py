@@ -179,15 +179,17 @@ def get_structural_info_from_protein(
     calculate_SASA: bool = True,
     calculate_charge: bool = True,
     calculate_angles: bool = True,
+    multi_struct: str = "warn",
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
     Params:
         - pdb_file: path to pdb file
         - remove_nonwater_hetero, remove_waters: whether or not to remove certain atoms
         - calculate_X: if set to false, go faster
+        - multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns:
-        Tuple of (pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs )
+        Tuple of (pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs, is_multi_model [1 or 0] ))
 
     By default, biopyton selects only atoms with the highest occupancy, thus behaving like pyrosetta does with the flag "-ignore_zero_occupancy false"
     """
@@ -199,14 +201,19 @@ def get_structural_info_from_protein(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", PDBConstructionWarning)
         structure = parser.get_structure(pdb_name, pdb_file)
-
-    # assume only one model is present in the structure
-    models = list(structure.get_models())
-    if len(models) != 1:
-        raise ValueError(f"More than 1 model found for {pdb_file}")
-
+    
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
+    pdb = os.path.basename(pdb)
+
+    models = list(structure.get_models())
+    if len(models) != 1:
+        if multi_struct == "crash":
+            raise ValueError(f"More than 1 model found for {pdb_file}")
+        else:
+            if multi_struct == "warn":
+                logger.warn(f"{len(models)} models found for {pdb_file}. Setting structure to the first model.")
+            structure = models[0]
 
     if calculate_SASA:
         # Calculates SASAs with biopython; each atom will have a .sasa attribute
@@ -229,7 +236,7 @@ def get_structural_info_from_protein(
     chi_atoms = {}
 
     def pad_for_consistency(string):
-        return (" " + string).ljust(4, " ")
+        return string.ljust(4, " ")
 
     # get structural info from each residue in the protein
     for atom in structure.get_atoms():
@@ -253,6 +260,8 @@ def get_structural_info_from_protein(
         residue = atom.get_parent().resname
         if residue in aa_to_one_letter:
             aa = aa_to_one_letter[residue]
+        else:
+            aa = "Z"
 
         res_id = np.array(
             [aa, pdb, chain, resnum, icode, "null"], dtype=f"S{L}"
@@ -311,6 +320,7 @@ def get_structural_info_from_protein(
         res_ids_per_residue,
         angles,
         vecs,
+        np.array([0 if len(models) == 1 else 1]),
     )
 
 
