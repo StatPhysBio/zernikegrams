@@ -61,7 +61,11 @@ def parse_args():
         help="Path to foldcomp file containing compressed PDBs. Required if --pdb_dir and --pdb_list_file not set",
     )
     parser.add_argument(
-        "--parallelism", "-p", type=int, help="Maximum number of CPU cores to use.", default=4
+        "--parallelism",
+        "-p",
+        type=int,
+        help="Maximum number of CPU cores to use.",
+        default=4,
     )
     parser.add_argument(
         "--max_atoms",
@@ -89,6 +93,13 @@ def parse_args():
         action="store_true",
         default=False,
         help="If present, charges are calculated for each atom.",
+    )
+    parser.add_argument(
+        "--add_hydrogens",
+        "-H",
+        action="store_true",
+        default=False,
+        help="Use PyMOL to add hydrogen atoms to the incoming PDBs",
     )
     parser.add_argument(
         "--handle_multi_structures",
@@ -119,6 +130,7 @@ def get_structural_info_from_dataset(
     vec_db: str = None,
     SASA: bool = True,
     charge: bool = True,
+    hydrogens: bool = False,
     handle_multi_structures: str = "warn",
 ) -> None:
     """
@@ -150,6 +162,8 @@ def get_structural_info_from_dataset(
         Whether or not to calculate SASAs
     charge: bool
         Whether or not to calculate charges
+    Hydrogens: bool
+        Whether or not to use PyMOL to add hydrogen atoms
     handle_multi_structures
         Behavior for handling PDBs with multiple structures
     """
@@ -185,15 +199,17 @@ def get_structural_info_from_dataset(
     # if charge:
     #     dt_arr.append(("charges", "f4", (max_atoms)))
     # dt = np.dtype(dt_arr)
-    dt = np.dtype([
-        ('pdb', f'S{L}',()),
-        ('atom_names', 'S4', (max_atoms)),
-        ('elements', 'S2', (max_atoms)),
-        ('res_ids', f'S{L}', (max_atoms,6)),
-        ('coords', 'f4', (max_atoms,3)),
-        ('SASAs', 'f4', (max_atoms)),
-        ('charges', 'f4', (max_atoms)),
-    ])
+    dt = np.dtype(
+        [
+            ("pdb", f"S{L}", ()),
+            ("atom_names", "S4", (max_atoms)),
+            ("elements", "S2", (max_atoms)),
+            ("res_ids", f"S{L}", (max_atoms, 6)),
+            ("coords", "f4", (max_atoms, 3)),
+            ("SASAs", "f4", (max_atoms)),
+            ("charges", "f4", (max_atoms)),
+        ]
+    )
 
     with h5py.File(hdf5_out, "w") as f:
         f.create_dataset(
@@ -220,6 +236,7 @@ def get_structural_info_from_dataset(
                     "SASA": SASA,
                     "charge": charge,
                     "angles": vec_db is not None or angle_db is not None,
+                    "hydrogens": hydrogens,
                     "multi_struct": handle_multi_structures,
                 },
                 parallelism=parallelism,
@@ -302,6 +319,7 @@ def get_padded_structural_info(
     SASA: bool = True,
     charge: bool = True,
     angles: bool = True,
+    hydrogens: bool = False,
     multi_struct: str = "warn",
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
@@ -316,6 +334,7 @@ def get_padded_structural_info(
     SASA: Whether or not to calculate SASA
     charge: Whether or not to calculate charge
     angles: Whether or not to calculate anglges
+    Hydrogens: Whether or not to add hydrogen atoms 
     multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns
@@ -339,6 +358,7 @@ def get_padded_structural_info(
             calculate_SASA=SASA,
             calculate_charge=charge,
             calculate_angles=angles,
+            hydrogens=hydrogens,
             multi_struct=multi_struct,
         )
 
@@ -382,6 +402,7 @@ def main():
         args.vec_db,
         args.SASA,
         args.charge,
+        args.add_hydrogens,
         args.handle_multi_structures,
     )
 

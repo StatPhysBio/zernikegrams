@@ -1,6 +1,7 @@
 import os
 import re
 import warnings
+import tempfile
 
 from Bio.PDB import (
     PDBParser,
@@ -14,6 +15,7 @@ from typing import (
     List,
 )
 from Bio.PDB.StructureBuilder import PDBConstructionWarning
+from pymol2 import PyMOL
 
 import numpy as np
 import numpy.typing as npt
@@ -179,6 +181,7 @@ def get_structural_info_from_protein(
     calculate_SASA: bool = True,
     calculate_charge: bool = True,
     calculate_angles: bool = True,
+    hydrogens: bool = False,
     multi_struct: str = "warn",
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
@@ -186,6 +189,7 @@ def get_structural_info_from_protein(
         - pdb_file: path to pdb file
         - remove_nonwater_hetero, remove_waters: whether or not to remove certain atoms
         - calculate_X: if set to false, go faster
+        - hydrogens: if set, will add hydrogens to pdb
         - multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns:
@@ -198,10 +202,22 @@ def get_structural_info_from_protein(
     pdb_name = pdb_file[:-4]
     L = len(pdb_name)
 
+    if hydrogens:
+        tmp = tempfile.NamedTemporaryFile()
+        with PyMOL() as pymol:
+            pymol.cmd.reinitialize()
+            pymol.cmd.load(pdb_file)
+            pymol.cmd.h_add()
+            pymol.cmd.save(tmp.name, format="pdb")
+        pdb_file = tmp.name
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", PDBConstructionWarning)
         structure = parser.get_structure(pdb_name, pdb_file)
-    
+
+    if hydrogens:
+        tmp.close()
+
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
     pdb = os.path.basename(pdb)
@@ -212,7 +228,9 @@ def get_structural_info_from_protein(
             raise ValueError(f"More than 1 model found for {pdb_file}")
         else:
             if multi_struct == "warn":
-                logger.warn(f"{len(models)} models found for {pdb_file}. Setting structure to the first model.")
+                logger.warn(
+                    f"{len(models)} models found for {pdb_file}. Setting structure to the first model."
+                )
             structure = models[0]
 
     if calculate_SASA:
@@ -240,7 +258,6 @@ def get_structural_info_from_protein(
 
     # get structural info from each residue in the protein
     for atom in structure.get_atoms():
-
         atom_full_id = atom.get_full_id()
 
         if remove_waters and atom_full_id[3][0] == "W":
