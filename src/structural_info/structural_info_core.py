@@ -1,6 +1,5 @@
 import os
 import re
-import warnings
 import tempfile
 
 from Bio.PDB import (
@@ -15,7 +14,8 @@ from typing import (
     List,
 )
 from Bio.PDB.StructureBuilder import PDBConstructionWarning
-from pymol2 import PyMOL
+from pdbfixer import PDBFixer
+from openmm.app import PDBFile
 
 import numpy as np
 import numpy.typing as npt
@@ -98,14 +98,16 @@ def get_chi_angle(
     """
     Calculates the dihedral angle given two plane norms and a2, a3 atom places
     """
+    eps = 1e-6
+
     sign_vec = a3 - a2
     sign_with_magnitude = np.dot(sign_vec, np.cross(plane_norm_1, plane_norm_2))
-    sign = sign_with_magnitude / (np.abs(sign_with_magnitude) + 1e-6)
+    sign = sign_with_magnitude / (np.abs(sign_with_magnitude) + eps)
 
     dot = np.dot(plane_norm_1, plane_norm_2) / (
         np.linalg.norm(plane_norm_1) * np.linalg.norm(plane_norm_2)
     )
-    chi_angle = sign * np.arccos(dot * 0.9999)
+    chi_angle = sign * np.arccos(dot * (1 - eps))
 
     return np.degrees(chi_angle)
 
@@ -181,6 +183,7 @@ def get_structural_info_from_protein(
     calculate_SASA: bool = True,
     calculate_charge: bool = True,
     calculate_angles: bool = True,
+    fix: bool = False,
     hydrogens: bool = False,
     multi_struct: str = "warn",
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
@@ -189,6 +192,7 @@ def get_structural_info_from_protein(
         - pdb_file: path to pdb file
         - remove_nonwater_hetero, remove_waters: whether or not to remove certain atoms
         - calculate_X: if set to false, go faster
+        - if set, will fix missing atoms in pdb
         - hydrogens: if set, will add hydrogens to pdb
         - multi_struct: Behavior for handling PDBs with multiple structures
 
@@ -197,25 +201,30 @@ def get_structural_info_from_protein(
 
     By default, biopyton selects only atoms with the highest occupancy, thus behaving like pyrosetta does with the flag "-ignore_zero_occupancy false"
     """
-    parser = PDBParser()
+    parser = PDBParser(QUIET=True)
 
     pdb_name = pdb_file[:-4]
     L = len(pdb_name)
 
-    if hydrogens:
+    if fix or hydrogens:
         tmp = tempfile.NamedTemporaryFile()
-        with PyMOL() as pymol:
-            pymol.cmd.reinitialize()
-            pymol.cmd.load(pdb_file)
-            pymol.cmd.h_add()
-            pymol.cmd.save(tmp.name, format="pdb")
+
+        fixer = PDBFixer(filename=pdb_file)
+        fixer.findMissingResidues()
+        fixer.findMissingAtoms()
+        fixer.addMissingAtoms()
+
+        if hydrogens:
+            fixer.addMissingHydrogens()
+
+        with open(tmp.name, "w") as w:
+            PDBFile.writeFile(fixer.topology, fixer.positions, file=w, keepIds=True)
+
         pdb_file = tmp.name
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", PDBConstructionWarning)
-        structure = parser.get_structure(pdb_name, pdb_file)
+    structure = parser.get_structure(pdb_name, pdb_file)
 
-    if hydrogens:
+    if fix or hydrogens:
         tmp.close()
 
     # assume the pdb name was provided as id to create the structure

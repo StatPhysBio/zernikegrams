@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--hdf5_out",
         "-o",
@@ -95,11 +95,18 @@ def parse_args():
         help="If present, charges are calculated for each atom.",
     )
     parser.add_argument(
+        "--fix_pdbs",
+        "-F",
+        action="store_true",
+        default=False,
+        help="Use OpenMM to find and fix missing atoms in pdb"
+    )
+    parser.add_argument(
         "--add_hydrogens",
         "-H",
         action="store_true",
         default=False,
-        help="Use PyMOL to add hydrogen atoms to the incoming PDBs",
+        help="Use OpenMM to add hydrogen atoms to the incoming PDBs. This implies --fix_pdbs",
     )
     parser.add_argument(
         "--handle_multi_structures",
@@ -130,6 +137,7 @@ def get_structural_info_from_dataset(
     vec_db: str = None,
     SASA: bool = True,
     charge: bool = True,
+    fix: bool = False,
     hydrogens: bool = False,
     handle_multi_structures: str = "warn",
 ) -> None:
@@ -162,8 +170,10 @@ def get_structural_info_from_dataset(
         Whether or not to calculate SASAs
     charge: bool
         Whether or not to calculate charges
+    Fix: bool
+        Whether or not to fix missing atoms
     Hydrogens: bool
-        Whether or not to use PyMOL to add hydrogen atoms
+        Whether or not to add hydrogen atoms
     handle_multi_structures
         Behavior for handling PDBs with multiple structures
     """
@@ -236,6 +246,7 @@ def get_structural_info_from_dataset(
                     "SASA": SASA,
                     "charge": charge,
                     "angles": vec_db is not None or angle_db is not None,
+                    "fix": fix,
                     "hydrogens": hydrogens,
                     "multi_struct": handle_multi_structures,
                 },
@@ -319,6 +330,7 @@ def get_padded_structural_info(
     SASA: bool = True,
     charge: bool = True,
     angles: bool = True,
+    fix: bool = False,
     hydrogens: bool = False,
     multi_struct: str = "warn",
 ) -> Tuple[
@@ -334,6 +346,7 @@ def get_padded_structural_info(
     SASA: Whether or not to calculate SASA
     charge: Whether or not to calculate charge
     angles: Whether or not to calculate anglges
+    Fix: Whether or not to fix missing atoms
     Hydrogens: Whether or not to add hydrogen atoms 
     multi_struct: Behavior for handling PDBs with multiple structures
 
@@ -402,6 +415,7 @@ def main():
         args.vec_db,
         args.SASA,
         args.charge,
+        args.fix_pdbs,
         args.add_hydrogens,
         args.handle_multi_structures,
     )
