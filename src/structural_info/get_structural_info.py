@@ -371,6 +371,7 @@ def get_padded_structural_info(
             calculate_SASA=SASA,
             calculate_charge=charge,
             calculate_angles=angles,
+            fix=fix,
             hydrogens=hydrogens,
             multi_struct=multi_struct,
         )
