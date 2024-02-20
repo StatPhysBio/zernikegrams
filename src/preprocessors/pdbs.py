@@ -141,7 +141,7 @@ class PDBPreprocessor:
             process_data_pdbs = functools.partial(
                 process_data_dir, pdb_dir=self.pdb_dir
             )
-            for res in pool.imap(process_data_pdbs, data):
+            for res in pool.imap(process_data_pdbs, data, chunksize=parallelism):
                 if res:
                     yield res
 
@@ -203,6 +203,6 @@ class FoldCompPreprocessor:
             processes=parallelism,
             initargs=(init, init_params, callback, params),
         ) as pool:
-            for res in pool.imap(process_data_foldcomp, data):
+            for res in pool.imap(process_data_foldcomp, data, chunksize=parallelism):
                 if res:
                     yield res
