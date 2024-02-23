@@ -60,7 +60,7 @@ def process_data_foldcomp(data: Tuple[str, str]) -> Tuple[str, Tuple]:
 
 
 def initializer(
-    init: Callable | None, init_params: Any, callback: Callable, params: Any
+    init: Callable, init_params: Any, callback: Callable, params: Any
 ):
     """
     Initializer function for the multiprocessing pool.
@@ -163,7 +163,7 @@ class FoldCompPreprocessor:
         """
         return self.size
 
-    def data(self, limit: int | None) -> Iterator[Tuple[str, str]]:
+    def data(self, limit: int) -> Iterator[Tuple[str, str]]:
         """
         Generator for name, pdb tuples in FoldComp database
 
