@@ -31,7 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "--hdf5_out",
         "-o",
@@ -95,11 +97,17 @@ def parse_args():
         help="If present, charges are calculated for each atom.",
     )
     parser.add_argument(
+        "--DSSP",
+        action="store_true",
+        default=False,
+        help="If present, secondary structure annotations are calculated for each residue",
+    )
+    parser.add_argument(
         "--fix_pdbs",
         "-F",
         action="store_true",
         default=False,
-        help="Use OpenMM to find and fix missing atoms in pdb"
+        help="Use OpenMM to find and fix missing atoms in pdb",
     )
     parser.add_argument(
         "--add_hydrogens",
@@ -137,6 +145,7 @@ def get_structural_info_from_dataset(
     vec_db: str = None,
     SASA: bool = True,
     charge: bool = True,
+    DSSP: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
     handle_multi_structures: str = "warn",
@@ -170,6 +179,8 @@ def get_structural_info_from_dataset(
         Whether or not to calculate SASAs
     charge: bool
         Whether or not to calculate charges
+    DSSP: bool
+        Whether or not to calculate DSSP
     Fix: bool
         Whether or not to fix missing atoms
     Hydrogens: bool
@@ -246,6 +257,7 @@ def get_structural_info_from_dataset(
                     "SASA": SASA,
                     "charge": charge,
                     "angles": vec_db is not None or angle_db is not None,
+                    "DSSP": DSSP,
                     "fix": fix,
                     "hydrogens": hydrogens,
                     "multi_struct": handle_multi_structures,
@@ -329,6 +341,7 @@ def get_padded_structural_info(
     padded_length: int = 200000,
     SASA: bool = True,
     charge: bool = True,
+    DSSP: bool = True,
     angles: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
@@ -345,9 +358,10 @@ def get_padded_structural_info(
     padded_length: size to pad to
     SASA: Whether or not to calculate SASA
     charge: Whether or not to calculate charge
+    DSSP: Whether or not to calculate DSSP
     angles: Whether or not to calculate anglges
     Fix: Whether or not to fix missing atoms
-    Hydrogens: Whether or not to add hydrogen atoms 
+    Hydrogens: Whether or not to add hydrogen atoms
     multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns
@@ -370,6 +384,7 @@ def get_padded_structural_info(
             pdb_file,
             calculate_SASA=SASA,
             calculate_charge=charge,
+            calculate_DSSP=DSSP,
             calculate_angles=angles,
             fix=fix,
             hydrogens=hydrogens,
@@ -416,6 +431,7 @@ def main():
         args.vec_db,
         args.SASA,
         args.charge,
+        args.DSSP,
         args.fix_pdbs,
         args.add_hydrogens,
         args.handle_multi_structures,

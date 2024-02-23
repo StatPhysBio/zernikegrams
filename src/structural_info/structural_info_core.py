@@ -6,6 +6,7 @@ from Bio.PDB import (
     PDBParser,
     SASA,
 )
+from Bio.PDB.DSSP import dssp_dict_from_pdb_file
 from collections import defaultdict
 from functools import partial
 from typing import (
@@ -182,6 +183,7 @@ def get_structural_info_from_protein(
     remove_waters: bool = True,
     calculate_SASA: bool = True,
     calculate_charge: bool = True,
+    calculate_DSSP: bool = True,
     calculate_angles: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
@@ -246,6 +248,11 @@ def get_structural_info_from_protein(
         # Calculates SASAs with biopython; each atom will have a .sasa attribute
         SASA.ShrakeRupley().compute(structure, level="A")
 
+    if calculate_DSSP:
+        dssp_dict, dssp_keys = dssp_dict_from_pdb_file(pdb_file)
+    else:
+        dssp_dict = {}
+
     # lists for each type of information to obtain
     atom_names = []
     elements = []
@@ -282,6 +289,7 @@ def get_structural_info_from_protein(
         atom_name = pad_for_consistency(atom_name_unpadded)
         element = atom.element
         coord = atom.get_coord()
+        ss = dssp_dict.get((chain, (" ", resnum, " ")), ("_", "null"))[1]
 
         residue = atom.get_parent().resname
         if residue in aa_to_one_letter:
@@ -290,7 +298,7 @@ def get_structural_info_from_protein(
             aa = "Z"
 
         res_id = np.array(
-            [aa, pdb, chain, resnum, icode, "null"], dtype=f"S{L}"
+            [aa, pdb, chain, resnum, icode, ss], dtype=f"S{L}"
         )  # adding 'null' in place of secondary structure for compatibility
 
         res_key = tuple(res_id)
