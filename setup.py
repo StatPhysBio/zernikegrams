@@ -6,11 +6,8 @@ setuptools.setup(
     description="Preprocessing routines for SO(3) equivariant protein structure tasks",
     long_description=open("README.md", "r").read(),
     long_description_content_type='text/markdown',
-    python_requires=">=3.10",
-    packages=[
-        "structural_info",
-        "tests",
-    ],
+    python_requires=">=3.9",
+    packages=setuptools.find_packages(),
     package_dir={
         "structural_info": "src",
     },
@@ -18,5 +15,6 @@ setuptools.setup(
         "console_scripts": [
             "structural-info = src.structural_info.get_structural_info:main",
         ]
-    }
+    },
+    include_package_data=True,
 )
