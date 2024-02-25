@@ -59,9 +59,7 @@ def process_data_foldcomp(data: Tuple[str, str]) -> Tuple[str, Tuple]:
         )
 
 
-def initializer(
-    init: Callable, init_params: Any, callback: Callable, params: Any
-):
+def initializer(init: Callable, init_params: Any, callback: Callable, params: Any):
     """
     Initializer function for the multiprocessing pool.
 

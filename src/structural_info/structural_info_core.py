@@ -296,9 +296,7 @@ def get_structural_info_from_protein(
         else:
             aa = "Z"
 
-        res_id = np.array(
-            [aa, pdb, chain, resnum, icode, ss], dtype=f"S{L}"
-        )
+        res_id = np.array([aa, pdb, chain, resnum, icode, ss], dtype=f"S{L}")
 
         res_key = tuple(res_id)
         if res_key not in chi_atoms:
@@ -353,7 +351,9 @@ def get_structural_info_from_protein(
         res_ids_per_residue,
         angles,
         vecs,
-        np.array([0 if len(models) == 1 else 1]), # necessary to compute number of pdbs with multiple structures
+        np.array(
+            [0 if len(models) == 1 else 1]
+        ),  # necessary to compute number of pdbs with multiple structures
     )
 
 
