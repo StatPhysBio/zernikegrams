@@ -4,6 +4,7 @@ import h5py
 import hdf5plugin
 import numpy as np
 import pytest
+import os
 
 
 MISMATCH_TOL = 0.15  # Tolerance for discrepancies between reference pyrosetta structural infos and new biopython ones
@@ -23,6 +24,7 @@ def test_make_tmpfile():
     )
 
     test_path = f"{test_dir.name}/test.hdf5"
+    assert os.path.exists(test_path)
 
 
 @pytest.mark.order("last")
