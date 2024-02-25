@@ -14,7 +14,6 @@ from typing import (
     Tuple,
     List,
 )
-from Bio.PDB.StructureBuilder import PDBConstructionWarning
 from pdbfixer import PDBFixer
 from openmm.app import PDBFile
 
@@ -226,9 +225,6 @@ def get_structural_info_from_protein(
 
     structure = parser.get_structure(pdb_name, pdb_file)
 
-    if fix or hydrogens:
-        tmp.close()
-
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
     pdb = os.path.basename(pdb)
@@ -249,9 +245,12 @@ def get_structural_info_from_protein(
         SASA.ShrakeRupley().compute(structure, level="A")
 
     if calculate_DSSP:
-        dssp_dict, dssp_keys = dssp_dict_from_pdb_file(pdb_file)
+        dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file)
     else:
         dssp_dict = {}
+
+    if fix or hydrogens:
+        tmp.close()
 
     # lists for each type of information to obtain
     atom_names = []
@@ -299,7 +298,7 @@ def get_structural_info_from_protein(
 
         res_id = np.array(
             [aa, pdb, chain, resnum, icode, ss], dtype=f"S{L}"
-        )  # adding 'null' in place of secondary structure for compatibility
+        )
 
         res_key = tuple(res_id)
         if res_key not in chi_atoms:
@@ -354,7 +353,7 @@ def get_structural_info_from_protein(
         res_ids_per_residue,
         angles,
         vecs,
-        np.array([0 if len(models) == 1 else 1]),
+        np.array([0 if len(models) == 1 else 1]), # necessary to compute number of pdbs with multiple structures
     )
 
 

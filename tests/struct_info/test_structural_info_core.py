@@ -91,3 +91,28 @@ def test_get_chi_angles_and_norm_vecs_throws():
     
     angles, vecs = get_chi_angles_and_norm_vecs("ASP", residue, "X")
     assert np.all(np.isnan(angles)) and np.all(np.isnan(vecs))
+
+
+def test_get_info_from_protein_basic():
+    pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs, is_multi_model) = get_structural_info_from_protein(
+        pdb_file="tests/data/pdbs/1hmd.pdb",
+        calculate_SASA=False,
+        calculate_angles=False,
+        calculate_charge=False,
+        calculate_DSSP=False,
+    )
+
+    assert sasas.size == 0 and charges.size == 0 and angles.size == 0 and norm_vecs.size == 0
+
+
+def test_get_info_from_protein_shapes_align():
+    pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs, is_multi_model) = get_structural_info_from_protein(
+        pdb_file="tests/data/pdbs/1hmd.pdb",
+        calculate_SASA=True,
+        calculate_angles=True,
+        calculate_charge=True,
+        calculate_DSSP=True,
+    )
+
+    assert sasas.shape[0] == charges.shape[0] == atom_names.shape[0] == elements.shape[0] != 0
+    assert angles.shape[0] == norm_vecs.shape[0] != 0
