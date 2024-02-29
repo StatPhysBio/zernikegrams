@@ -3,6 +3,7 @@ import os
 import signal
 import foldcomp
 import tempfile
+import stopit
 
 import numpy as np
 
@@ -20,6 +21,10 @@ from src.utils import log_config as logging
 logger = logging.getLogger(__name__)
 
 
+TIMEOUT = 300 # Max seconds per protein
+
+
+@stopit.threading_timeoutable()
 def process_data_dir(pdb: str, pdb_dir: str) -> Tuple[str, Tuple]:
     """
     Given a single instance of a pdb file and its parent directory,
@@ -35,7 +40,7 @@ def process_data_dir(pdb: str, pdb_dir: str) -> Tuple[str, Tuple]:
 
     return process_data_dir.callback(pdb_file, **process_data_dir.params)
 
-
+@stopit.threading_timeoutable()
 def process_data_foldcomp(data: Tuple[str, str]) -> Tuple[str, Tuple]:
     """
     Given a single instance of a pdb id and pdb file contents as a string
@@ -137,7 +142,7 @@ class PDBPreprocessor:
                 logger.error(msg)
                 raise Exception(msg)
             process_data_pdbs = functools.partial(
-                process_data_dir, pdb_dir=self.pdb_dir
+                process_data_dir, pdb_dir=self.pdb_dir, timeout=TIMEOUT
             )
             for res in pool.imap(process_data_pdbs, data, chunksize=parallelism):
                 if res:
@@ -201,6 +206,9 @@ class FoldCompPreprocessor:
             processes=parallelism,
             initargs=(init, init_params, callback, params),
         ) as pool:
-            for res in pool.imap(process_data_foldcomp, data, chunksize=parallelism):
+            process_data_pdbs = functools.partial(
+                process_data_foldcomp, timeout=TIMEOUT
+            )
+            for res in pool.imap(process_data_pdbs, data, chunksize=parallelism):
                 if res:
                     yield res

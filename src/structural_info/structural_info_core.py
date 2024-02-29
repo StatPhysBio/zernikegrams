@@ -227,7 +227,7 @@ def get_structural_info_from_protein(
 
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
-    pdb = os.path.basename(pdb)
+    pdb = os.path.basename(pdb).replace("_", "-") # "_" is reserved for the res_id delimiter later in pipeline 
 
     models = list(structure.get_models())
     if len(models) != 1:
@@ -263,8 +263,6 @@ def get_structural_info_from_protein(
     angles = []
     vecs = []
     res_ids_per_residue = []
-
-    k = 0
 
     chi_atoms = {}
 
@@ -321,8 +319,6 @@ def get_structural_info_from_protein(
                     f"Unknown charge type: {type(res_charges)}. Something must be wrong."
                 )
             charges.append(charge)
-
-        k += 1
 
     if calculate_angles:
         for res_key, (resname, atoms) in chi_atoms.items():
