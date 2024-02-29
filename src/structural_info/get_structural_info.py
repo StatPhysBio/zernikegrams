@@ -94,7 +94,7 @@ def parse_args():
         "-c",
         action="store_true",
         default=False,
-        help="If present, charges are calculated for each atom.",
+        help="If present, charges are calculated for each atom using AMBER99 force fields.",
     )
     parser.add_argument(
         "--DSSP",
