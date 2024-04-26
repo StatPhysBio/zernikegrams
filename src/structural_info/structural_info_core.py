@@ -219,6 +219,8 @@ def get_structural_info_from_protein(
             fixer.addMissingHydrogens()
         
         fixer.removeHeterogens(keepWater=False)
+        fixer.findNonstandardResidues()
+        fixer.replaceNonstandardResidues()
 
         with open(tmp.name, "w") as w:
             PDBFile.writeFile(fixer.topology, fixer.positions, file=w, keepIds=True)

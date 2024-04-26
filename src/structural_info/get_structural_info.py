@@ -236,6 +236,7 @@ def get_structural_info_from_dataset(
         f.create_dataset(
             output_dataset_name,
             shape=(processor.size,),
+            maxshape=(None,),
             dtype=dt,
             chunks=True,
             compression=hdf5plugin.LZ4(),
