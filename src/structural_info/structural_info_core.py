@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import io
 
 from Bio.PDB import (
     PDBParser,
@@ -176,6 +177,23 @@ def get_chi_angles_and_norm_vecs(
     return chis, vecs
 
 
+def remove_waters_pdb(original: str, waterless: str) -> None:
+    """
+    Removes water atoms from a pdb file
+
+    Original: path to pdb file with original data
+    waterless: path where new PDB file will be written
+    """
+    with io.StringIO() as buffer:
+        with open(original, "r") as f_in:
+            for line in f_in.readlines():
+                if "HOH" not in line: 
+                    buffer.write(line)
+
+        with open(waterless, "w") as f_out:
+            print(buffer.getvalue(), file=f_out)
+    
+
 def get_structural_info_from_protein(
     pdb_file: str,
     remove_nonwater_hetero: bool = False,
@@ -211,19 +229,24 @@ def get_structural_info_from_protein(
         tmp = tempfile.NamedTemporaryFile()
 
         fixer = PDBFixer(filename=pdb_file)
+
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
+
+        # fixer.findNonstandardResidues()
+        # fixer.replaceNonstandardResidues()
+
         fixer.addMissingAtoms()
 
         if hydrogens:
             fixer.addMissingHydrogens()
         
-        fixer.removeHeterogens(keepWater=False)
-        fixer.findNonstandardResidues()
-        fixer.replaceNonstandardResidues()
+        # fixer.removeHeterogens(keepWater=False)
 
         with open(tmp.name, "w") as w:
             PDBFile.writeFile(fixer.topology, fixer.positions, file=w, keepIds=True)
+
+        remove_waters_pdb(original=tmp.name, waterless=tmp.name) # only necessary if hydrogens are added?
 
         pdb_file = tmp.name
 
