@@ -21,7 +21,7 @@ from src.utils import log_config as logging
 logger = logging.getLogger(__name__)
 
 
-TIMEOUT = 300 # Max seconds per protein
+TIMEOUT = 300  # Max seconds per protein
 
 
 @stopit.threading_timeoutable()
@@ -39,6 +39,7 @@ def process_data_dir(pdb: str, pdb_dir: str) -> Tuple[str, Tuple]:
     pdb_file = os.path.join(pdb_dir, pdb + ".pdb")
 
     return process_data_dir.callback(pdb_file, **process_data_dir.params)
+
 
 @stopit.threading_timeoutable()
 def process_data_foldcomp(data: Tuple[str, str]) -> Tuple[str, Tuple]:

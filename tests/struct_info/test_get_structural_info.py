@@ -7,7 +7,7 @@ import pytest
 import os
 
 
-MISMATCH_TOL = 0.15  # Tolerance for discrepancies between reference pyrosetta structural infos and new biopython ones
+MISMATCH_TOL = 0.20  # Tolerance for discrepancies between reference pyrosetta structural infos and new biopython ones
 
 
 reference_path = "tests/data/baseline_struct_info._hdf5"

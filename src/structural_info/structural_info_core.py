@@ -2,6 +2,7 @@ import os
 import re
 import tempfile
 import io
+import subprocess
 
 from Bio.PDB import (
     PDBParser,
@@ -244,9 +245,10 @@ def get_structural_info_from_protein(
         # fixer.removeHeterogens(keepWater=False)
 
         with open(tmp.name, "w") as w:
+            w.write("HEADER dummy header for DSSP\n")
             PDBFile.writeFile(fixer.topology, fixer.positions, file=w, keepIds=True)
 
-        remove_waters_pdb(original=tmp.name, waterless=tmp.name) # only necessary if hydrogens are added?
+        # remove_waters_pdb(original=tmp.name, waterless=tmp.name) # only necessary if hydrogens are added?
 
         pdb_file = tmp.name
 
@@ -272,7 +274,15 @@ def get_structural_info_from_protein(
         SASA.ShrakeRupley().compute(structure, level="A")
 
     if calculate_DSSP:
-        dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file)
+        for dssp_name in ("mkdssp", "dssp"):
+            try:
+                version = subprocess.run(f"{dssp_name} --version".split(), capture_output=True).stdout.decode().strip(f"{dssp_name} version ")
+                dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file, dssp_version=version)
+                break
+            except:
+                continue
+        else:
+            dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file)
     else:
         dssp_dict = {}
 

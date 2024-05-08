@@ -14,6 +14,7 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "structural-info = src.structural_info.get_structural_info:main",
+            "neighborhoods = src.neighborhoods.get_neighborhoods:main"
         ]
     },
     include_package_data=True,
