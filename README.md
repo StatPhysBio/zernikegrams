@@ -23,8 +23,12 @@ TODO (general)
 ## Usage
 ```
 $ structural-info [options]
+$ neighborhoods [options]
+$ zernikegrams [options]
 ```
 For example ,
 ```
 $ structural-info --hdf5_out foo.hdf5 --pdb_dir tests/data/pdbs
+$ neighborhoods  --hdf5_in foo.hdf5 --hdf5_out bar.hdf5
+$ zernikegrams --hdf5_in bar.hdf5 --hdf5_out baz.hdf5  
 ```
