@@ -188,12 +188,12 @@ def remove_waters_pdb(original: str, waterless: str) -> None:
     with io.StringIO() as buffer:
         with open(original, "r") as f_in:
             for line in f_in.readlines():
-                if "HOH" not in line: 
+                if "HOH" not in line:
                     buffer.write(line)
 
         with open(waterless, "w") as f_out:
             print(buffer.getvalue(), file=f_out)
-    
+
 
 def get_structural_info_from_protein(
     pdb_file: str,
@@ -241,7 +241,7 @@ def get_structural_info_from_protein(
 
         if hydrogens:
             fixer.addMissingHydrogens()
-        
+
         # fixer.removeHeterogens(keepWater=False)
 
         with open(tmp.name, "w") as w:
@@ -256,7 +256,9 @@ def get_structural_info_from_protein(
 
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
-    pdb = os.path.basename(pdb).replace("_", "-") # "_" is reserved for the res_id delimiter later in pipeline 
+    pdb = os.path.basename(pdb).replace(
+        "_", "-"
+    )  # "_" is reserved for the res_id delimiter later in pipeline
 
     models = list(structure.get_models())
     if len(models) != 1:
@@ -276,8 +278,16 @@ def get_structural_info_from_protein(
     if calculate_DSSP:
         for dssp_name in ("mkdssp", "dssp"):
             try:
-                version = subprocess.run(f"{dssp_name} --version".split(), capture_output=True).stdout.decode().strip(f"{dssp_name} version ")
-                dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file, dssp_version=version)
+                version = (
+                    subprocess.run(
+                        f"{dssp_name} --version".split(), capture_output=True
+                    )
+                    .stdout.decode()
+                    .strip(f"{dssp_name} version ")
+                )
+                dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(
+                    pdb_file, dssp_version=version
+                )
                 break
             except:
                 continue
