@@ -12,20 +12,20 @@ from hdf5plugin import LZ4
 import numpy as np
 from sqlitedict import SqliteDict
 
-from src.utils import log_config as logging
+from zernikegrams.utils import log_config as logging
 
 logger = logging.getLogger(__name__)
 
-from src.preprocessors.neighborhoods_hdf5 import HDF5Preprocessor
-from src.utils.spherical_bases import change_basis_complex_to_real
-from src.zernikegrams.zernikegrams_core import get_hologram
-from src.utils.protein_naming import ol_to_ind_size
+from zernikegrams.preprocessors.neighborhoods_hdf5 import HDF5Preprocessor
+from zernikegrams.utils.spherical_bases import change_basis_complex_to_real
+from zernikegrams.zernikegrams.zernikegrams_core import get_hologram
+from zernikegrams.utils.protein_naming import ol_to_ind_size
 
 # from protein_holography_pytorch.utils.posterity import get_metadata,record_metadata
-from src.utils.argparse import *
+from zernikegrams.utils.argparse import *
 
 
-from src.utils.constants import BACKBONE_ATOMS, N, CA, C, O, EMPTY_ATOM_NAME
+from zernikegrams.utils.constants import BACKBONE_ATOMS, N, CA, C, O, EMPTY_ATOM_NAME
 
 GLYCINE, ALANINE = ol_to_ind_size["G"], ol_to_ind_size["A"]
 
@@ -354,7 +354,7 @@ def get_single_zernikegram(
             ), f"N_coords.shape[0] is {N_coords.shape[0]} instead of 1"
 
             # convert coords to cartesian and add CA at [0, 0, 0]
-            from src.utils.conversions import spherical_to_cartesian__numpy
+            from zernikegrams.utils.conversions import spherical_to_cartesian__numpy
 
             backbone_coords = np.vstack(
                 [

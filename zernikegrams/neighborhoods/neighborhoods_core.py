@@ -5,8 +5,8 @@ import h5py
 import numpy as np
 from sklearn.neighbors import KDTree
 
-from src.utils.constants import BACKBONE_ATOMS, N, CA, C, O, EMPTY_ATOM_NAME
-from src.utils.conversions import cartesian_to_spherical__numpy
+from zernikegrams.utils.constants import BACKBONE_ATOMS, N, CA, C, O, EMPTY_ATOM_NAME
+from zernikegrams.utils.conversions import cartesian_to_spherical__numpy
 
 
 # given a set of neighbor coords, slice all info in the npProtein along neighbor inds

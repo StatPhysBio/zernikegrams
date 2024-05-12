@@ -8,15 +8,13 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     python_requires=">=3.9",
     packages=setuptools.find_packages(),
-    package_dir={
-        "structural_info": "src",
-    },
     entry_points={
         "console_scripts": [
-            "structural-info = src.structural_info.get_structural_info:main",
-            "neighborhoods = src.neighborhoods.get_neighborhoods:main",
-            "zernikegrams = src.zernikegrams.get_zernikegrams:main"
+            "structural-info = zernikegrams.structural_info.get_structural_info:main",
+            "neighborhoods = zernikegrams.neighborhoods.get_neighborhoods:main",
+            "zernikegrams = zernikegrams.holograms.get_holograms:main"
         ]
     },
     include_package_data=True,
 )
+

@@ -2,7 +2,7 @@
 Module for logging conventions
 
 ```python
-from src.utils import log_config as logging
+from zernikegrams.utils import log_config as logging
 logger = logging.getLogger(__name__)
 ```
 """

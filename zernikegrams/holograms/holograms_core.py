@@ -7,11 +7,9 @@ import numpy as np
 import scipy as sp
 import scipy.special
 
-from src.utils.spherical_bases import change_basis_complex_to_real
-
-from src.utils.constants import BACKBONE_ATOMS, N, CA, C, O, EMPTY_ATOM_NAME
-
-from src.utils import log_config as logging
+from zernikegrams.utils.spherical_bases import change_basis_complex_to_real
+from zernikegrams.utils.constants import BACKBONE_ATOMS, N, CA, C, O, EMPTY_ATOM_NAME
+from zernikegrams.utils import log_config as logging
 
 logger = logging.getLogger(__name__)
 

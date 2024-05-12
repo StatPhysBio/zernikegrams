@@ -13,16 +13,16 @@ from rich.progress import Progress
 
 import numpy as np
 
-from src.utils import log_config as logging
-from src.utils.pdb_lists import (
+from zernikegrams.utils import log_config as logging
+from zernikegrams.utils.pdb_lists import (
     pdb_list_from_dir,
     pdb_list_from_foldcomp,
 )
-from src.preprocessors.pdbs import (
+from zernikegrams.preprocessors.pdbs import (
     PDBPreprocessor,
     FoldCompPreprocessor,
 )
-from src.structural_info.structural_info_core import (
+from zernikegrams.structural_info.structural_info_core import (
     get_structural_info_from_protein,
     pad_structural_info,
 )
@@ -123,6 +123,13 @@ def parse_args():
         choices=["crash", "warn", "allow"],
         help="Behavior for handling PDBs with multiple structures",
     )
+    parser.add_argument(
+        "--renumber_residues",
+        "-r",
+        action="store_true",
+        default=False,
+        help="Renumber residues so that chains start at 1 and each residue is 1 + the previous"
+    )
 
     args = parser.parse_args()
     if args.pdb_dir is None and args.foldcomp is None:
@@ -149,6 +156,7 @@ def get_structural_info_from_dataset(
     fix: bool = False,
     hydrogens: bool = False,
     handle_multi_structures: str = "warn",
+    renumber: bool = False
 ) -> None:
     """
     Parallel processing of PDBs into structural info
@@ -187,6 +195,8 @@ def get_structural_info_from_dataset(
         Whether or not to add hydrogen atoms
     handle_multi_structures
         Behavior for handling PDBs with multiple structures
+    renumber
+        Whether or not to renumber residues
     """
     if os.path.isdir(input_path):
         pdb_dir = input_path
@@ -262,6 +272,7 @@ def get_structural_info_from_dataset(
                     "fix": fix,
                     "hydrogens": hydrogens,
                     "multi_struct": handle_multi_structures,
+                    "renumber": renumber,
                 },
                 parallelism=parallelism,
             ):
@@ -347,6 +358,7 @@ def get_padded_structural_info(
     fix: bool = False,
     hydrogens: bool = False,
     multi_struct: str = "warn",
+    renumber: bool = False
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
 ]:
@@ -364,6 +376,7 @@ def get_padded_structural_info(
     Fix: Whether or not to fix missing atoms
     Hydrogens: Whether or not to add hydrogen atoms
     multi_struct: Behavior for handling PDBs with multiple structures
+    renumber: Whether or not to renumber residues
 
     Returns
     -------
@@ -390,6 +403,7 @@ def get_padded_structural_info(
             fix=fix,
             hydrogens=hydrogens,
             multi_struct=multi_struct,
+            renumber=renumber,
         )
 
         mat_structural_info = pad_structural_info(
@@ -436,6 +450,7 @@ def main():
         args.fix_pdbs,
         args.add_hydrogens,
         args.handle_multi_structures,
+        args.renumber_residues,
     )
 
     logger.info(f"Total time = {time.time() - start_time:.2f} seconds")

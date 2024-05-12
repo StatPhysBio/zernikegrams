@@ -1,3 +1,3 @@
-graft src
-include src/structural_info/charges.rtp
-include src/zernikegrams/YZX_XYZ_cob.npy
+graft zernikegrams
+include zernikegrams/structural_info/charges.rtp
+include zernikegrams/holograms/YZX_XYZ_cob.npy

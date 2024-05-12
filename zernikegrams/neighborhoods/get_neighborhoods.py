@@ -13,13 +13,13 @@ from hdf5plugin import LZ4
 import numpy as np
 from rich.progress import Progress
 
-from src.neighborhoods.neighborhoods_core import (
+from zernikegrams.neighborhoods.neighborhoods_core import (
     get_neighborhoods_from_protein,
     pad_neighborhoods,
 )
 
-from src.preprocessors.proteins_hdf5 import HDF5Preprocessor
-from src.utils import log_config as logging
+from zernikegrams.preprocessors.proteins_hdf5 import HDF5Preprocessor
+from zernikegrams.utils import log_config as logging
 
 logger = logging.getLogger(__name__)
 

@@ -53,7 +53,7 @@ CHI_ANGLES = {
 }
 
 # transform chi angle atoms by left-justifying anf converting to bytes
-from src.utils.protein_naming import aa_to_one_letter
+from zernikegrams.utils.protein_naming import aa_to_one_letter
 
 CHI_ATOMS = {
     aa_to_one_letter[aa]: [CB]
