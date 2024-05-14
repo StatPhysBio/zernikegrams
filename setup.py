@@ -1,4 +1,32 @@
 import setuptools
+from setuptools.command.install import install
+import os
+import subprocess
+
+
+class CustomInstall(install):
+    def run(self):
+        install.run(self)
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        reduce_path = os.path.join(dir_path, "zernikegrams/structural_info/reduce")
+        os.makedirs(
+            reduce_path,
+            exist_ok=True
+        )
+        os.chdir(reduce_path)
+        subprocess.run(
+            ["git", "clone", "https://github.com/rlabduke/reduce.git"]
+        )
+        os.chdir(os.path.join(reduce_path, "reduce"))
+        subprocess.run(["make"])
+
+        # reduce's tests break our tests
+        with open(os.path.join(reduce_path, "reduce/test/test_reduce.py"), "w") as w:
+            w.write("\n")
+
+        os.chdir(dir_path)
+        
 
 setuptools.setup(
     name="zernikegrams",
@@ -16,5 +44,6 @@ setuptools.setup(
         ]
     },
     include_package_data=True,
+    cmdclass={"install": CustomInstall}
 )
 

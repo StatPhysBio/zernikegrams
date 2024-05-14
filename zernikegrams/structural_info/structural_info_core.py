@@ -3,6 +3,7 @@ import re
 import tempfile
 import io
 import subprocess
+import contextlib
 
 from Bio.PDB import (
     PDBParser,
@@ -23,8 +24,11 @@ import numpy as np
 import numpy.typing as npt
 
 from zernikegrams.utils import log_config as logging
+from zernikegrams.structural_info.RaSP import clean_pdb
 
 logger = logging.getLogger(__name__)
+
+REDUCER = "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce"
 
 
 ##################### Copied from https://github.com/nekitmm/DLPacker/blob/main/utils.py
@@ -178,14 +182,17 @@ def get_chi_angles_and_norm_vecs(
     return chis, vecs
 
 
-def remove_waters_pdb(original: str, waterless: str) -> None:
+def remove_waters_pdb(original: str, waterless: str, header: bool = False) -> None:
     """
     Removes water atoms from a pdb file
 
     Original: path to pdb file with original data
     waterless: path where new PDB file will be written
+    header: add a dummy header
     """
     with io.StringIO() as buffer:
+        if header:
+            buffer.write("HEADER dummy header for DSSP\n")
         with open(original, "r") as f_in:
             for line in f_in.readlines():
                 if "HOH" not in line:
@@ -229,28 +236,13 @@ def get_structural_info_from_protein(
     L = len(pdb_name)
 
     if fix or hydrogens:
-        tmp = tempfile.NamedTemporaryFile()
+        tmp = tempfile.NamedTemporaryFile()   
 
-        fixer = PDBFixer(filename=pdb_file)
+        # RaSP has a lot of warnings
+        with contextlib.redirect_stderr(os.devnull):
+            clean_pdb(pdb_file, tmp.name, REDUCER)
 
-        fixer.findMissingResidues()
-        fixer.findMissingAtoms()
-
-        # fixer.findNonstandardResidues()
-        # fixer.replaceNonstandardResidues()
-
-        fixer.addMissingAtoms()
-
-        if hydrogens:
-            fixer.addMissingHydrogens()
-
-        # fixer.removeHeterogens(keepWater=False)
-
-        with open(tmp.name, "w") as w:
-            w.write("HEADER dummy header for DSSP\n")
-            PDBFile.writeFile(fixer.topology, fixer.positions, file=w, keepIds=not renumber)
-
-        # remove_waters_pdb(original=tmp.name, waterless=tmp.name) # only necessary if hydrogens are added?
+        remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
 
         pdb_file = tmp.name
 
