@@ -16,9 +16,11 @@ class CustomInstall(install):
         )
         os.chdir(reduce_path)
         subprocess.run(
-            ["git", "clone", "https://github.com/rlabduke/reduce.git"]
+            ["unzip", "reduce.zip"]
         )
         os.chdir(os.path.join(reduce_path, "reduce"))
+        
+        subprocess.run(["make", "clean"])
         subprocess.run(["make"])
 
         # reduce's tests break our tests
