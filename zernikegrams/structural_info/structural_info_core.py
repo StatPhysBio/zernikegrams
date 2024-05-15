@@ -214,7 +214,6 @@ def remove_whiteout(tmp_dir):
     """
     def copy_to_tmp():
         pdbfixer_true_path = pdbfixer.pdbfixer.__file__
-        open(f"{tmp_dir}/fake_file", "a").close()
         root = os.path.dirname(pdbfixer_true_path)
 
         if os.path.exists(os.path.join(root, "templates/.wh..wh..opq")):
@@ -225,7 +224,8 @@ def remove_whiteout(tmp_dir):
                     if ".wh..wh..opq" in filename:
                         file_path = os.path.join(root, filename)
                         os.remove(file_path)
-
+                        
+            open(f"{tmp_dir}/fake_file", "a").close()
             pdbfixer.pdbfixer.__file__ = f"{tmp_dir}/fake_file"
 
         return pdbfixer_true_path
