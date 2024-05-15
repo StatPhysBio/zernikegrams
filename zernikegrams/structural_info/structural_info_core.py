@@ -239,7 +239,6 @@ def get_structural_info_from_protein(
     fix: bool = False,
     hydrogens: bool = False,
     multi_struct: str = "warn",
-    renumber: bool = False,
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
     Params:
@@ -249,7 +248,6 @@ def get_structural_info_from_protein(
         - if set, will fix missing atoms in pdb
         - hydrogens: if set, will add hydrogens to pdb
         - multi_struct: Behavior for handling PDBs with multiple structures
-        - renumber: if set, pdbfixer renumbers residues
 
     Returns:
         Tuple of (pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs, is_multi_model [1 or 0] ))
