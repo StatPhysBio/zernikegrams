@@ -201,17 +201,19 @@ def remove_waters_pdb(original: str, waterless: str, header: bool = False) -> No
         with open(waterless, "w") as f_out:
             print(buffer.getvalue(), file=f_out)
 
+
 @contextmanager
 def remove_whiteout(tmp_dir):
     """
     In read-only apptainer, a "whiteout" file '.wh..wh..opq'
-    is added to some directories. pdbfixer relies on enumerating and 
+    is added to some directories. pdbfixer relies on enumerating and
     processing files in /opt/miniconda/envs/zernikegrams/lib/python3.10/site-packages/pdbfixer/templates.
     So we should remove this file manually and hope its not important.
     Or make a PR request to pdbfixer.
 
     By definition, cannot edit read-only FS. So we're doing this
     """
+
     def copy_to_tmp():
         pdbfixer_true_path = pdbfixer.pdbfixer.__file__
         root = os.path.dirname(pdbfixer_true_path)
@@ -224,19 +226,17 @@ def remove_whiteout(tmp_dir):
                     if ".wh..wh..opq" in filename:
                         file_path = os.path.join(root, filename)
                         os.remove(file_path)
-                        
+
             open(f"{tmp_dir}/fake_file", "a").close()
             pdbfixer.pdbfixer.__file__ = f"{tmp_dir}/fake_file"
 
         return pdbfixer_true_path
-    
+
     try:
         true_path = copy_to_tmp()
         yield
     finally:
         pdbfixer.pdbfixer.__file__ = true_path
-
-    
 
 
 def get_structural_info_from_protein(
@@ -271,12 +271,12 @@ def get_structural_info_from_protein(
     L = len(pdb_name)
 
     if fix or hydrogens:
-        tmp = tempfile.NamedTemporaryFile()   
+        tmp = tempfile.NamedTemporaryFile()
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             with remove_whiteout(tmp_dir):
                 clean_pdb(pdb_file, tmp.name, REDUCER)
-        
+
         remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
 
         pdb_file = tmp.name

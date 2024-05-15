@@ -17,8 +17,9 @@ import openmm.app
 PDBIO = Bio.PDB.PDBIO()
 PDB_PARSER = Bio.PDB.PDBParser(PERMISSIVE=0, QUIET=True)
 
+
 class NonHetSelector(Bio.PDB.Select):
-    """ Remove HET atoms and choose first conformation of disordered atoms"""
+    """Remove HET atoms and choose first conformation of disordered atoms"""
 
     def accept_residue(self, residue):
         norm_res_bool = residue.get_resname() in [
@@ -38,7 +39,6 @@ class NonHetSelector(Bio.PDB.Select):
             or atom.get_altloc() == "A"
             or atom.get_altloc() == "1"
         ) and atom.id[0] in ["C", "H", "N", "O", "S", "P"]
-    
 
 
 class PDBFixerResIdentifiabilityIssue(Exception):
@@ -105,7 +105,7 @@ def _step_4_fix_numbering(fixer, temp3, temp4):
         residues_before.append(chain.get_list())
         for res in chain:
             for atom in res:
-                atoms_before.append(atom)    
+                atoms_before.append(atom)
     residues_after = []
     atoms_after = []
     for chain in structure_after[0]:
@@ -173,7 +173,7 @@ def _step_4_fix_numbering(fixer, temp3, temp4):
 
 def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str):
     """
-    Function to clean pdbs using reduce and pdbfixer. 
+    Function to clean pdbs using reduce and pdbfixer.
 
     Parameters
     ----------
@@ -207,8 +207,6 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str):
                 # Step 4: Correct for pdbfixer not preserving insertion codes
                 with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp4:
                     structure_after = _step_4_fix_numbering(fixer, temp3, temp4)
-                    with open(
-                        out_path, "w"
-                    ) as outpdb:
+                    with open(out_path, "w") as outpdb:
                         PDBIO.set_structure(structure_after[0])
                         PDBIO.save(outpdb)

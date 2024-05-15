@@ -2,6 +2,7 @@ import numpy as np
 
 from zernikegrams.structural_info.structural_info_core import *
 
+
 def test_get_chi_angle_basic():
     plane_norm_1 = np.array([0, 0, 1])
     plane_norm_2 = np.array([0, 1, 0])
