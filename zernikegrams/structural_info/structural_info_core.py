@@ -5,6 +5,8 @@ import io
 import subprocess
 import shutil
 
+from contextlib import contextmanager
+
 from Bio.PDB import (
     PDBParser,
     SASA,
@@ -18,7 +20,6 @@ from typing import (
     List,
 )
 import pdbfixer
-from openmm.app import PDBFile
 
 import numpy as np
 import numpy.typing as npt
@@ -200,7 +201,7 @@ def remove_waters_pdb(original: str, waterless: str, header: bool = False) -> No
         with open(waterless, "w") as f_out:
             print(buffer.getvalue(), file=f_out)
 
-
+@contextmanager
 def remove_whiteout(tmp_dir):
     """
     In read-only apptainer, a "whiteout" file '.wh..wh..opq'
@@ -211,19 +212,29 @@ def remove_whiteout(tmp_dir):
 
     By definition, cannot edit read-only FS. So we're doing this
     """
-    pdbfixer_true_path = pdbfixer.pdbfixer.__file__
-    open(f"{tmp_dir}/fake_file", "a").close()
-    root = os.path.dirname(pdbfixer_true_path)
-    shutil.copytree(root, tmp_dir, dirs_exist_ok=True)
+    def copy_to_tmp():
+        pdbfixer_true_path = pdbfixer.pdbfixer.__file__
+        open(f"{tmp_dir}/fake_file", "a").close()
+        root = os.path.dirname(pdbfixer_true_path)
 
-    for root, dirs, files in os.walk(tmp_dir):
-        for filename in files:
-            if ".wh..wh..opq" in filename:
-                file_path = os.path.join(root, filename)
-                os.remove(file_path)
+        if os.path.exists(os.path.join(root, "templates/.wh..wh..opq")):
+            shutil.copytree(root, tmp_dir, dirs_exist_ok=True)
 
-    pdbfixer.pdbfixer.__file__ = f"{tmp_dir}/fake_file"
-    return pdbfixer_true_path
+            for root, dirs, files in os.walk(tmp_dir):
+                for filename in files:
+                    if ".wh..wh..opq" in filename:
+                        file_path = os.path.join(root, filename)
+                        os.remove(file_path)
+
+            pdbfixer.pdbfixer.__file__ = f"{tmp_dir}/fake_file"
+
+        return pdbfixer_true_path
+    
+    try:
+        true_path = copy_to_tmp()
+        yield
+    finally:
+        pdbfixer.pdbfixer.__file__ = true_path
 
     
 
@@ -263,12 +274,10 @@ def get_structural_info_from_protein(
         tmp = tempfile.NamedTemporaryFile()   
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            pdbfixer_path = remove_whiteout(tmp_dir)
-
-            clean_pdb(pdb_file, tmp.name, REDUCER)
-            remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
-
-            pdbfixer.pdbfixer.__file__ = pdbfixer_path
+            with remove_whiteout(tmp_dir):
+                clean_pdb(pdb_file, tmp.name, REDUCER)
+        
+        remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
 
         pdb_file = tmp.name
 
