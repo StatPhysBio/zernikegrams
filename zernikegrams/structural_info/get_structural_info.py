@@ -411,7 +411,7 @@ def get_padded_structural_info(
         )
     except Exception as e:
         logger.error(f"Failed to process {pdb_file}")
-        logger.error(e)
+        logger.exception(e)
         return (None,)
 
     return (pdb, *mat_structural_info)

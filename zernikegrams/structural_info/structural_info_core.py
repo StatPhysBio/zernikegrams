@@ -3,7 +3,7 @@ import re
 import tempfile
 import io
 import subprocess
-import contextlib
+import shutil
 
 from Bio.PDB import (
     PDBParser,
@@ -17,7 +17,7 @@ from typing import (
     Tuple,
     List,
 )
-from pdbfixer import PDBFixer
+import pdbfixer
 from openmm.app import PDBFile
 
 import numpy as np
@@ -29,7 +29,6 @@ from zernikegrams.structural_info.RaSP import clean_pdb
 logger = logging.getLogger(__name__)
 
 REDUCER = os.path.join(os.path.dirname(__file__), "reduce/reduce/reduce_src/reduce")
-
 
 ##################### Copied from https://github.com/nekitmm/DLPacker/blob/main/utils.py
 # read in the charges from special file
@@ -202,6 +201,33 @@ def remove_waters_pdb(original: str, waterless: str, header: bool = False) -> No
             print(buffer.getvalue(), file=f_out)
 
 
+def remove_whiteout(tmp_dir):
+    """
+    In read-only apptainer, a "whiteout" file '.wh..wh..opq'
+    is added to some directories. pdbfixer relies on enumerating and 
+    processing files in /opt/miniconda/envs/zernikegrams/lib/python3.10/site-packages/pdbfixer/templates.
+    So we should remove this file manually and hope its not important.
+    Or make a PR request to pdbfixer.
+
+    By definition, cannot edit read-only FS. So we're doing this
+    """
+    pdbfixer_true_path = pdbfixer.pdbfixer.__file__
+    open(f"{tmp_dir}/fake_file", "a").close()
+    root = os.path.dirname(pdbfixer_true_path)
+    shutil.copytree(root, tmp_dir, dirs_exist_ok=True)
+
+    for root, dirs, files in os.walk(tmp_dir):
+        for filename in files:
+            if ".wh..wh..opq" in filename:
+                file_path = os.path.join(root, filename)
+                os.remove(file_path)
+
+    pdbfixer.pdbfixer.__file__ = f"{tmp_dir}/fake_file"
+    return pdbfixer_true_path
+
+    
+
+
 def get_structural_info_from_protein(
     pdb_file: str,
     remove_nonwater_hetero: bool = False,
@@ -238,11 +264,13 @@ def get_structural_info_from_protein(
     if fix or hydrogens:
         tmp = tempfile.NamedTemporaryFile()   
 
-        # RaSP has a lot of warnings
-        with contextlib.redirect_stderr(os.devnull):
-            clean_pdb(pdb_file, tmp.name, REDUCER)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            pdbfixer_path = remove_whiteout(tmp_dir)
 
-        remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
+            clean_pdb(pdb_file, tmp.name, REDUCER)
+            remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
+
+            pdbfixer.pdbfixer.__file__ = pdbfixer_path
 
         pdb_file = tmp.name
 
