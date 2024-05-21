@@ -101,7 +101,6 @@ def test_remove_central_sidechain_and_not_backbone():
         central_mask = np.logical_and.reduce(res_ids == res_id, axis=-1)
         central_res_ids = res_ids[central_mask]
         central_atom_names = nb['atom_names'][central_mask]
-
         central_backbone_only_without_CA.append(has_only_and_all_backbone_atoms_without_CA(central_atom_names))
         central_backbone_only.append(has_only_and_all_backbone_atoms(central_atom_names))
 
@@ -127,7 +126,6 @@ def test_remove_central_sidechain_and_not_backbone():
         central_mask = np.logical_and.reduce(res_ids == res_id, axis=-1)
         central_res_ids = res_ids[central_mask]
         central_atom_names = nb['atom_names'][central_mask]
-
         central_backbone_only_without_CA.append(has_only_and_all_backbone_atoms_without_CA(central_atom_names))
         central_backbone_only.append(has_only_and_all_backbone_atoms(central_atom_names))
 
@@ -136,6 +134,8 @@ def test_remove_central_sidechain_and_not_backbone():
     
     os.remove('sinfo.hdf5')
     os.remove('nbs.hdf5')
+
+
 
 
 def test_align_with_backbone_frame():

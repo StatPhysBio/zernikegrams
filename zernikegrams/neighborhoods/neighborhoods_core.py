@@ -266,7 +266,6 @@ def get_neighborhoods_from_protein(
 
             # align to frame
             nh[3] = np.matmul(nh[3], frame_rot_matrix)
-
         
         if coordinate_system == "spherical":
             nh[3] = np.array(cartesian_to_spherical__numpy(nh[3]))
