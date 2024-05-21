@@ -101,6 +101,7 @@ def get_neighborhoods_from_protein(
     r_max: float = 10.0,
     uc: bool = True,
     remove_central_residue: bool = True,
+    remove_central_sidechain: bool = False,
     central_residue_only: bool = False,
     keep_central_CA: bool = False,
     backbone_only: bool = False,
@@ -126,9 +127,12 @@ def get_neighborhoods_from_protein(
     # print(f"Value of backbone_only: {backbone_only}")
 
     if remove_central_residue and central_residue_only:
-        raise ValueError(
-            "remove_central_residue and central_residue_only cannot both be True"
-        )
+        raise ValueError("remove_central_residue and central_residue_only cannot both be True")
+    if remove_central_residue and remove_central_sidechain:
+        raise ValueError("remove_central_residue and remove_central_sidechain cannot both be True")
+    if central_residue_only and remove_central_sidechain:
+        raise ValueError("central_residue_only and remove_central_sidechain cannot both be True")
+    
 
     atom_names = np_protein["atom_names"]
     real_locs = atom_names != EMPTY_ATOM_NAME
@@ -165,16 +169,30 @@ def get_neighborhoods_from_protein(
         structural_info=[np_protein[x] for x in range(1, len(np_protein))],
     )
 
-    # remove central residue
     if remove_central_residue:
         for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):
             central_locs = np.logical_and.reduce(
                 res_ids[neighbor_list] == nh_id[None, :], axis=-1
             )
             neighbors_list[i] = neighbor_list[~central_locs]
+    
+    elif remove_central_sidechain:
+        for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):
+            central_locs = np.logical_and.reduce(
+                res_ids[neighbor_list] == nh_id[None, :], axis=-1
+            )
+            backbone_locs = np.logical_or.reduce(
+                atom_names[neighbor_list][:, None] == BACKBONE_ATOMS[None, :], axis=-1
+            )
+            mask = np.logical_or(~central_locs, backbone_locs)
+            if not keep_central_CA:
+                CA_locs = atom_names[neighbor_list] == CA
+                central_CA_loc = np.logical_and(central_locs, CA_locs)
+                mask = np.logical_and(mask, ~central_CA_loc)
+            neighbors_list[i] = neighbor_list[mask]
 
     elif central_residue_only:
-        # remove central CA but keep the rest of the central residue only
+        # remove central CA - if requested - but keep the rest of the central residue only
         for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):
             central_locs = np.logical_and.reduce(
                 res_ids[neighbor_list] == nh_id[None, :], axis=-1
@@ -187,7 +205,7 @@ def get_neighborhoods_from_protein(
                 ]
 
     else:
-        # keep central residue and all other atoms but still remove central CA
+        # keep central residue and all other atoms but still remove central CA - if requested
         for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):
             central_locs = np.logical_and.reduce(
                 res_ids[neighbor_list] == nh_id[None, :], axis=-1

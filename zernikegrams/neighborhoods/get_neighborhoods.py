@@ -29,6 +29,7 @@ def get_neighborhoods(
     r_max: float,
     remove_central_residue: bool = False,
     central_residue_only: bool = False,
+    remove_central_sidechain: bool = False,
     keep_central_CA: bool = False,
     backbone_only: bool = False,
     coordinate_system: str = "spherical",
@@ -59,6 +60,7 @@ def get_neighborhoods(
             padded_length,
             unique_chains,
             remove_central_residue,
+            remove_central_sidechain,
             central_residue_only,
             keep_central_CA,
             coordinate_system=coordinate_system,
@@ -121,6 +123,7 @@ def get_padded_neighborhoods(
     padded_length,
     unique_chains,
     remove_central_residue: bool,
+    remove_central_sidechain: bool,
     central_residue_only: bool,
     keep_central_CA: bool,
     coordinate_system: str = "spherical",
@@ -159,6 +162,7 @@ def get_padded_neighborhoods(
             res_ids_selection=res_ids,
             uc=unique_chains,
             remove_central_residue=remove_central_residue,
+            remove_central_sidechain=remove_central_sidechain,
             central_residue_only=central_residue_only,
             keep_central_CA=keep_central_CA,
             backbone_only=backbone_only,
@@ -193,6 +197,7 @@ def get_neighborhoods_from_dataset(
     unique_chains,
     coordinate_system: str,
     remove_central_residue: bool,
+    remove_central_sidechain: bool,
     central_residue_only: bool,
     keep_central_CA,
     backbone_only: bool = False,
@@ -295,6 +300,7 @@ def get_neighborhoods_from_dataset(
                         "unique_chains": unique_chains,
                         "coordinate_system": coordinate_system,
                         "remove_central_residue": remove_central_residue,
+                        "remove_central_sidechain": remove_central_sidechain,
                         "central_residue_only": central_residue_only,
                         "keep_central_CA": keep_central_CA,
                         "backbone_only": backbone_only,
@@ -403,13 +409,19 @@ def main():
     )
     parser.add_argument(
         "--remove_central_residue",
-        help="Whether to remove the central residue from the neighborhood. Cannot be done in conjunction with --central_residue_only.",
+        help="Whether to remove the central residue from the neighborhood. Cannot be done in conjunction with --central_residue_only nor --remove_central_sidechain.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--remove_central_sidechain",
+        help="Whether to remove the central residue's sidechain from the neighborhood, while keeping the backbone atoms. Cannot be done in conjunction with --central_residue_only nor --remove_central_residue.",
         action="store_true",
         default=False,
     )
     parser.add_argument(
         "--central_residue_only",
-        help="Whether to only keep the central residue in the neighborhood. Cannot be done in conjunction with --remove_central_residue.",
+        help="Whether to only keep the central residue in the neighborhood. Cannot be done in conjunction with --remove_central_residue nor --remove_central_sidechain.",
         action="store_true",
         default=False,
     )
@@ -454,6 +466,7 @@ def main():
         args.unique_chains,
         args.coordinate_system,
         args.remove_central_residue,
+        args.remove_central_sidechain,
         args.central_residue_only,
         args.keep_central_CA,
         args.backbone_only,
