@@ -102,6 +102,7 @@ def get_neighborhoods_from_protein(
     uc: bool = True,
     remove_central_residue: bool = True,
     central_residue_only: bool = False,
+    keep_central_CA: bool = False,
     backbone_only: bool = False,
     res_ids_selection=None,
 ) -> np.ndarray:
@@ -178,11 +179,12 @@ def get_neighborhoods_from_protein(
             central_locs = np.logical_and.reduce(
                 res_ids[neighbor_list] == nh_id[None, :], axis=-1
             )
-            CA_locs = atom_names[neighbor_list] == CA
-            central_CA_loc = np.logical_and(central_locs, CA_locs)
-            neighbors_list[i] = neighbor_list[
-                np.logical_and(central_locs, ~central_CA_loc)
-            ]
+            if not keep_central_CA:
+                CA_locs = atom_names[neighbor_list] == CA
+                central_CA_loc = np.logical_and(central_locs, CA_locs)
+                neighbors_list[i] = neighbor_list[
+                    np.logical_and(central_locs, ~central_CA_loc)
+                ]
 
     else:
         # keep central residue and all other atoms but still remove central CA
@@ -190,10 +192,11 @@ def get_neighborhoods_from_protein(
             central_locs = np.logical_and.reduce(
                 res_ids[neighbor_list] == nh_id[None, :], axis=-1
             )
-            CA_locs = atom_names[neighbor_list] == CA
-            neighbors_list[i] = neighbor_list[
-                ~np.logical_and.reduce(np.stack([central_locs, CA_locs]), axis=0)
-            ]
+            if not keep_central_CA:
+                CA_locs = atom_names[neighbor_list] == CA
+                neighbors_list[i] = neighbor_list[
+                    ~np.logical_and.reduce(np.stack([central_locs, CA_locs]), axis=0)
+                ]
 
     if backbone_only:
         for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):

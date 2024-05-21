@@ -29,6 +29,7 @@ def get_neighborhoods(
     r_max: float,
     remove_central_residue: bool = False,
     central_residue_only: bool = False,
+    keep_central_CA: bool = False,
     backbone_only: bool = False,
     coordinate_system: str = "spherical",
     padded_length: int = 1000,
@@ -59,6 +60,7 @@ def get_neighborhoods(
             unique_chains,
             remove_central_residue,
             central_residue_only,
+            keep_central_CA,
             coordinate_system=coordinate_system,
             backbone_only=backbone_only,
             get_residues=get_residues,
@@ -120,6 +122,7 @@ def get_padded_neighborhoods(
     unique_chains,
     remove_central_residue: bool,
     central_residue_only: bool,
+    keep_central_CA: bool,
     coordinate_system: str = "spherical",
     backbone_only: bool = False,
     get_residues=None,
@@ -157,6 +160,7 @@ def get_padded_neighborhoods(
             uc=unique_chains,
             remove_central_residue=remove_central_residue,
             central_residue_only=central_residue_only,
+            keep_central_CA=keep_central_CA,
             backbone_only=backbone_only,
             coordinate_system=coordinate_system,
         )
@@ -190,6 +194,7 @@ def get_neighborhoods_from_dataset(
     coordinate_system: str,
     remove_central_residue: bool,
     central_residue_only: bool,
+    keep_central_CA,
     backbone_only: bool = False,
     parallelism: int = 40,
     max_atoms=1000,
@@ -291,6 +296,7 @@ def get_neighborhoods_from_dataset(
                         "coordinate_system": coordinate_system,
                         "remove_central_residue": remove_central_residue,
                         "central_residue_only": central_residue_only,
+                        "keep_central_CA": keep_central_CA,
                         "backbone_only": backbone_only,
                         "get_residues": get_residues,
                     },
@@ -408,6 +414,12 @@ def main():
         default=False,
     )
     parser.add_argument(
+        "--keep_central_CA",
+        help="Whether to keep the central residue's CA in the neighborhood.",
+        action="store_true",
+        default=False
+    )
+    parser.add_argument(
         "--backbone_only",
         help="Whether to only include backbone atoms in the neighborhood, as opposed to all atoms.",
         action="store_true",
@@ -443,6 +455,7 @@ def main():
         args.coordinate_system,
         args.remove_central_residue,
         args.central_residue_only,
+        args.keep_central_CA,
         args.backbone_only,
         args.parallelism,
         get_residues_file=args.get_residues_file,
