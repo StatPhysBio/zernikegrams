@@ -38,6 +38,7 @@ setuptools.setup(
             "structural-info = zernikegrams.structural_info.get_structural_info:main",
             "neighborhoods = zernikegrams.neighborhoods.get_neighborhoods:main",
             "zernikegrams = zernikegrams.holograms.get_holograms:main",
+            "noise-neighborhoods = zernikegrams.add_noise.get_noised_nh:main"
         ]
     },
     include_package_data=True,
