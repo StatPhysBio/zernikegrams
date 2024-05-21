@@ -98,6 +98,7 @@ def get_unique_chains(protein: np.ndarray) -> List[bytes]:
 def get_neighborhoods_from_protein(
     np_protein: np.ndarray,
     coordinate_system: str = "spherical",
+    align_to_backbone_frame: bool = False,
     r_max: float = 10.0,
     uc: bool = True,
     remove_central_residue: bool = True,
@@ -169,6 +170,20 @@ def get_neighborhoods_from_protein(
         structural_info=[np_protein[x] for x in range(1, len(np_protein))],
     )
 
+    if align_to_backbone_frame:
+        # first, get C, N and O coordinates per neighborhood
+        N_locs = atom_names == N
+        C_locs = atom_names == C
+        O_locs = atom_names == O
+        N_coords, C_coords, O_coords = [], [], []
+        for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):
+            central_locs = np.logical_and.reduce(
+                res_ids[neighbor_list] == nh_id[None, :], axis=-1
+            )
+            N_coords.append(coords[neighbor_list][central_locs][N_locs[neighbor_list][central_locs]][0])
+            C_coords.append(coords[neighbor_list][central_locs][C_locs[neighbor_list][central_locs]][0])
+            O_coords.append(coords[neighbor_list][central_locs][O_locs[neighbor_list][central_locs]][0])
+
     if remove_central_residue:
         for i, (nh_id, neighbor_list) in enumerate(zip(nh_ids, neighbors_list)):
             central_locs = np.logical_and.reduce(
@@ -222,21 +237,41 @@ def get_neighborhoods_from_protein(
                 atom_names[neighbor_list][:, None] == BACKBONE_ATOMS[None, :], axis=-1
             )
             neighbors_list[i] = neighbor_list[backbone_locs]
+    
 
     neighborhoods = list(map(get_neighbors_custom, neighbors_list))
 
-    # print(f"Coordinate system in phn: {coordinate_system}")
     filtered_neighborhoods = []
-    for nh, nh_id, ca_coord in zip(neighborhoods, nh_ids, ca_coords):
-        # convert to spherical coordinates
-        # print(nh[3].shape,nh[3].dtype)
-        # print(ca_coord,type(ca_coord))
-        # print('\t',np.array(cartesian_to_spherical__numpy(nh[3] - ca_coord)).shape,np.array(cartesian_to_spherical__numpy(nh[3] - ca_coord)).dtype)
-        # print('\t',np.array(cartesian_to_spherical__numpy(nh[3])).shape,np.array(cartesian_to_spherical__numpy(nh[3])).dtype)
+    for i, (nh, nh_id, ca_coord) in enumerate(zip(neighborhoods, nh_ids, ca_coords)):
+        
+        # center coordinates to CA
+        nh[3] = nh[3] - ca_coord
+
+        # align to backbone frame, if requested
+        if align_to_backbone_frame:
+            # center coordinates of C, N and O to CA
+            centered_N_coord, centered_C_coord, centered_O_coord = N_coords[i] - ca_coord, C_coords[i] - ca_coord, O_coords[i] - ca_coord
+            centered_CA_coord = np.zeros(3)
+
+            # compute frame
+            x = centered_N_coord - centered_CA_coord
+            x = x / np.linalg.norm(x)
+            CA_C_vec = centered_C_coord - centered_CA_coord
+            z = np.cross(x, CA_C_vec)
+            z = z / np.linalg.norm(z)
+            y = np.cross(z, x)
+            y = y / np.linalg.norm(y)
+            frame_rot_matrix = np.stack([x, y, z], axis=1)
+            # assert np.allclose(frame_rot_matrix.T, np.linalg.inv(frame_rot_matrix)) # this is always true, omitting it because it might return false for numerical errors that don't matter much
+
+            # align to frame
+            nh[3] = np.matmul(nh[3], frame_rot_matrix)
+
+        
         if coordinate_system == "spherical":
-            nh[3] = np.array(cartesian_to_spherical__numpy(nh[3] - ca_coord))
+            nh[3] = np.array(cartesian_to_spherical__numpy(nh[3]))
         if coordinate_system == "cartesian":
-            nh[3] = nh[3] - ca_coord
+            nh[3] = nh[3]
         nh.insert(0, nh_id)
 
         if nh_id[0].decode("utf-8") not in {
