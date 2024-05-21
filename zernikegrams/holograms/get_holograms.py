@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 from zernikegrams.preprocessors.neighborhoods_hdf5 import HDF5Preprocessor
 from zernikegrams.utils.spherical_bases import change_basis_complex_to_real
-from zernikegrams.zernikegrams.zernikegrams_core import get_hologram
+from zernikegrams.holograms.holograms_core import get_hologram
 from zernikegrams.utils.protein_naming import ol_to_ind_size
 
 # from protein_holography_pytorch.utils.posterity import get_metadata,record_metadata
