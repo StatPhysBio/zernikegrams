@@ -29,8 +29,11 @@ def get_neighborhoods(
     r_max: float,
     remove_central_residue: bool = False,
     central_residue_only: bool = False,
+    remove_central_sidechain: bool = False,
+    keep_central_CA: bool = False,
     backbone_only: bool = False,
     coordinate_system: str = "spherical",
+    align_to_backbone_frame: bool = False,
     padded_length: int = 1000,
     unique_chains: bool = False,
     get_residues=None,
@@ -58,8 +61,11 @@ def get_neighborhoods(
             padded_length,
             unique_chains,
             remove_central_residue,
+            remove_central_sidechain,
             central_residue_only,
+            keep_central_CA,
             coordinate_system=coordinate_system,
+            align_to_backbone_frame=align_to_backbone_frame,
             backbone_only=backbone_only,
             get_residues=get_residues,
         )
@@ -119,8 +125,11 @@ def get_padded_neighborhoods(
     padded_length,
     unique_chains,
     remove_central_residue: bool,
+    remove_central_sidechain: bool,
     central_residue_only: bool,
+    keep_central_CA: bool,
     coordinate_system: str = "spherical",
+    align_to_backbone_frame: bool = False,
     backbone_only: bool = False,
     get_residues=None,
 ):
@@ -156,8 +165,11 @@ def get_padded_neighborhoods(
             res_ids_selection=res_ids,
             uc=unique_chains,
             remove_central_residue=remove_central_residue,
+            remove_central_sidechain=remove_central_sidechain,
             central_residue_only=central_residue_only,
+            keep_central_CA=keep_central_CA,
             backbone_only=backbone_only,
+            align_to_backbone_frame=align_to_backbone_frame,
             coordinate_system=coordinate_system,
         )
         padded_neighborhoods = pad_neighborhoods(
@@ -188,13 +200,17 @@ def get_neighborhoods_from_dataset(
     output_dataset_name,
     unique_chains,
     coordinate_system: str,
+    align_to_backbone_frame: bool,
     remove_central_residue: bool,
+    remove_central_sidechain: bool,
     central_residue_only: bool,
+    keep_central_CA,
     backbone_only: bool = False,
     parallelism: int = 40,
     max_atoms=1000,
     get_residues_file=None,
     filter_out_chains_not_in_proteinnet=False,
+    pdb_chain_pairs_to_consider_filepath=None
 ):
     """
     Parallel retrieval of neighborhoods from structural info file and writing
@@ -217,6 +233,9 @@ def get_neighborhoods_from_dataset(
         Number of workers to use
     """
     # metadata = get_metadata()
+
+    if filter_out_chains_not_in_proteinnet and pdb_chain_pairs_to_consider_filepath is not None:
+        raise ValueError("Cannot use both filter_out_chains_not_in_proteinnet and pdb_chain_pairs_to_consider_filepath, as they conflict with each other.")
 
     ds = HDF5Preprocessor(hdf5_in, input_dataset_name)
 
@@ -250,11 +269,15 @@ def get_neighborhoods_from_dataset(
     if filter_out_chains_not_in_proteinnet:
         print("Filtering out chains not in ProteinNet.")
         try:
-            proteinnet__pdb_chain_pairs = get_proteinnet__pdb_chain_pairs(
+            pdb_chain_pairs_to_consider = get_proteinnet__pdb_chain_pairs(
                 testing=True if "testing" in hdf5_in else False
             )  # not an ideal if-confition... but it saves extra parameters
         except FileNotFoundError:
             print("Could not find ProteinNet file. Ignoring.")
+    elif pdb_chain_pairs_to_consider_filepath is not None:
+        print(f"Filtering out chains not in {pdb_chain_pairs_to_consider_filepath}.")
+        with open(pdb_chain_pairs_to_consider_filepath, "r") as f:
+            pdb_chain_pairs_to_consider = set(f.read().splitlines())
 
     # import user method
     if not get_residues_file is None:
@@ -289,10 +312,13 @@ def get_neighborhoods_from_dataset(
                         "padded_length": max_atoms,
                         "unique_chains": unique_chains,
                         "coordinate_system": coordinate_system,
+                        "align_to_backbone_frame": align_to_backbone_frame,
                         "remove_central_residue": remove_central_residue,
+                        "remove_central_sidechain": remove_central_sidechain,
                         "central_residue_only": central_residue_only,
+                        "keep_central_CA": keep_central_CA,
                         "backbone_only": backbone_only,
-                        "get_residues": get_residues,
+                        "get_residues": get_residues
                     },
                     parallelism=parallelism,
                 )
@@ -305,7 +331,7 @@ def get_neighborhoods_from_dataset(
                         pdbs_fail.append(pdb)
                         continue
 
-                    if filter_out_chains_not_in_proteinnet:
+                    if filter_out_chains_not_in_proteinnet or pdb_chain_pairs_to_consider_filepath is not None:
                         filtered_neighborhoods = []
                         for neighborhood in neighborhoods:
                             if (
@@ -315,24 +341,29 @@ def get_neighborhoods_from_dataset(
                                         neighborhood["res_id"][2].decode("utf-8"),
                                     ]
                                 )
-                                in proteinnet__pdb_chain_pairs
+                                in pdb_chain_pairs_to_consider
                             ):
                                 filtered_neighborhoods.append(neighborhood)
                         neighborhoods = np.array(filtered_neighborhoods)
 
                     neighborhoods_per_protein = neighborhoods.shape[0]
 
+                    if neighborhoods_per_protein == 0:
+                        del neighborhoods
+                        logger.warning(f"No neighborhoods for {pdb}, possibly because no pdb_chain pair with this pdb is present in the file. Skipping.")
+                        bar.next()
+                        pdbs_fail.append(pdb)
+                        continue
+
                     while n + neighborhoods_per_protein > curr_size:
                         curr_size += 10000
                         nhs.resize((curr_size, 6))
                         f[output_dataset_name].resize((curr_size,))
 
-                    # print(neighborhoods[0])
 
-                    f[output_dataset_name][
-                        n : n + neighborhoods_per_protein
-                    ] = neighborhoods
+                    f[output_dataset_name][n : n + neighborhoods_per_protein] = neighborhoods
                     nhs[n : n + neighborhoods_per_protein] = neighborhoods["res_id"]
+
                     n += neighborhoods_per_protein
                 except Exception as e:
                     logger.warning(
@@ -396,16 +427,34 @@ def main():
         choices=["spherical", "cartesian"],
     )
     parser.add_argument(
+        "--align_to_backbone_frame",
+        help="Whether to align the neighborhood to the central residue's backbone frame, thereby standardizing its orientation and providing a rudimental form of rotational invariance.",
+        action="store_true",
+        default=False
+    )
+    parser.add_argument(
         "--remove_central_residue",
-        help="Whether to remove the central residue from the neighborhood. Cannot be done in conjunction with --central_residue_only.",
+        help="Whether to remove the central residue from the neighborhood. Cannot be done in conjunction with --central_residue_only nor --remove_central_sidechain.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--remove_central_sidechain",
+        help="Whether to remove the central residue's sidechain from the neighborhood, while keeping the backbone atoms. Cannot be done in conjunction with --central_residue_only nor --remove_central_residue.",
         action="store_true",
         default=False,
     )
     parser.add_argument(
         "--central_residue_only",
-        help="Whether to only keep the central residue in the neighborhood. Cannot be done in conjunction with --remove_central_residue.",
+        help="Whether to only keep the central residue in the neighborhood. Cannot be done in conjunction with --remove_central_residue nor --remove_central_sidechain.",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "--keep_central_CA",
+        help="Whether to keep the central residue's CA in the neighborhood.",
+        action="store_true",
+        default=False
     )
     parser.add_argument(
         "--backbone_only",
@@ -422,12 +471,22 @@ def main():
     parser.add_argument(
         "--parallelism", type=int, help="Parallelism for multiprocessing.", default=4
     )
-    parser.add_argument("--get_residues_file", type=str, default=None)
+    parser.add_argument(
+        "--get_residues_file",
+        type=str,
+        default=None
+    )
     parser.add_argument(
         "--filter_out_chains_not_in_proteinnet",
-        help="Whether to filter out chains not in proteinnet. Only relevant when training and testing on proteinnet casp12 PDBs.",
+        help="Whether to filter out chains not in proteinnet. Only relevant when training and testing on proteinnet casp12 PDBs. Has same effect as --pdb_chain_pairs_to_consider_filepath if the file were prepared in advanced, here for legacy purposes.",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "--pdb_chain_pairs_to_consider_filepath",
+        type=str,
+        help="Path to file containing pdb_chain pairs to consider. Only relevant when filter_out_chains_not_in_proteinnet is True.",
+        default=None
     )
 
     args = parser.parse_args()
@@ -441,12 +500,16 @@ def main():
         args.output_dataset_name,
         args.unique_chains,
         args.coordinate_system,
+        args.align_to_backbone_frame,
         args.remove_central_residue,
+        args.remove_central_sidechain,
         args.central_residue_only,
+        args.keep_central_CA,
         args.backbone_only,
         args.parallelism,
         get_residues_file=args.get_residues_file,
         filter_out_chains_not_in_proteinnet=args.filter_out_chains_not_in_proteinnet,
+        pdb_chain_pairs_to_consider_filepath=args.pdb_chain_pairs_to_consider_filepath
     )
 
     logger.info(f"Total time = {time() - s:.2f} seconds")
