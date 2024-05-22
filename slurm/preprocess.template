@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH --job={{job_name}}
+#SBATCH --account={{account}}
+#SBATCH --partition={{partition}}
+#SBATCH --nodes={{nodes}}
+#SBATCH --ntasks={{ntasks}}
+#SBATCH --cpus-per-task={{cpus-per-task}}
+#SBATCH --time={{time}}
+#SBATCH --mem={{memory}}
+#SBATCH --output={{output}}
+
+tmp_path={{tmp_path}}
+split={{split}}
+file_idx={{file_idx}}
+seed={{seed}}
+final_path={{final_path}}
+
+if [ "$seed" != "None" ]; then
+    {{run_add_noise}}
+fi
+
+{{run_neighborhoods}}
+
+{{run_zernikegrams}}
+
+
+exit 0

@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH --job={{job_name}}
+#SBATCH --account={{account}}
+#SBATCH --partition={{partition}}
+#SBATCH --nodes={{nodes}}
+#SBATCH --ntasks={{ntasks}}
+#SBATCH --cpus-per-task={{cpus-per-task}}
+#SBATCH --time={{time}}
+#SBATCH --mem={{memory}}
+#SBATCH --output={{output}}
+
+data_path={{pdb_ids_path}}
+pdb_ids={{pdb_ids}}
+pdb_dir={{pdb_dir}}
+tmp_path={{tmp_path}}
+split={{split}}
+chunk_size={{chunk_size}}
+file_idx={{file_idx}}
+line_idx={{line_idx}}
+
+set -e
+
+sed -n $line_idx,$(($line_idx + $chunk_size - 1))p $data_path/${pdb_ids} > $tmp_path/${split}_${file_idx}_${line_idx}.pdbs
+[ -s $tmp_path/${split}_${file_idx}_${line_idx}.pdbs ] || exit 0
+
+
+
+{{run_structural_info}}
+
+
+exit 0
