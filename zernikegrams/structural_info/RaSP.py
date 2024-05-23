@@ -195,10 +195,10 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str):
 
         # Step 2: NonHetSelector filter
         with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp2:
-            PDBIO.set_structure(first_model)
-            PDBIO.save(temp2, select=NonHetSelector())
-            temp2.flush()
-            first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+            # PDBIO.set_structure(first_model)
+            # PDBIO.save(temp2, select=NonHetSelector())
+            # temp2.flush()
+            # first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
 
             # Step 3: Replace altloc chars to " " and use pdbfixer
             with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp3:
