@@ -175,7 +175,6 @@ def get_padded_neighborhoods(
         padded_neighborhoods = pad_neighborhoods(
             neighborhoods, padded_length=padded_length
         )
-        del neighborhoods
     except Exception as e:
         print(e, flush=True)
         logging.error(e)
@@ -326,8 +325,6 @@ def get_neighborhoods_from_dataset(
                 try:
 
                     if neighborhoods is None:
-                        del neighborhoods
-                        bar.next()
                         pdbs_fail.append(pdb)
                         continue
 
@@ -349,7 +346,6 @@ def get_neighborhoods_from_dataset(
                     neighborhoods_per_protein = neighborhoods.shape[0]
 
                     if neighborhoods_per_protein == 0:
-                        del neighborhoods
                         logger.warning(f"No neighborhoods for {pdb}, possibly because no pdb_chain pair with this pdb is present in the file. Skipping.")
                         bar.next()
                         pdbs_fail.append(pdb)
@@ -372,12 +368,11 @@ def get_neighborhoods_from_dataset(
                     logger.exception(e)
                 finally:
                     # attempt to address memory issues. currently unsuccessfully
-                    del neighborhoods
                     pdbs_pass.append(pdb)
                     bar.update(
                         task,
                         advance=1,
-                        description=f"Structural Info: {i + 1}/{ds.count()}",
+                        description=f"Neighborhoods: {i + 1}/{ds.count()}",
                     )
 
             logger.info(f"Number of processed neighborhoods: {n}")

@@ -619,7 +619,7 @@ def get_zernikegrams_from_dataset(
                         bar.update(
                             task,
                             advance=1,
-                            description=f"Structural Info: {n}/{ds.count()}",
+                            description=f"zernikegrams: {n}/{ds.count()}",
                         )
                         n += 1
 
