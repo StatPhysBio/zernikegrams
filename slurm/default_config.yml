@@ -1,0 +1,131 @@
+apptainer:
+  # Option 1: You don't use apptainer -- uncomment 
+  #           this and comment out the other apptainer_invocation
+  # invocation: "{{cmd}}"
+
+  # Option 2: You use apptainer
+  invocation: |
+    apptainer exec \
+      --bind /gscratch \
+      --overlay /gscratch/spe/${USER}/apptainer_images/conda-overlay.img:ro \
+      /gscratch/spe/${USER}/apptainer_images/hyak-container.sif /bin/bash -l -c \
+      "{{cmd}}"
+
+
+scripts:
+  # location to put intermediate hdf5 files
+  tmp_path: "/gscratch/scrubbed/wgalvin/casps"
+
+  # location to put final zernikegrams
+  final_path: "/gscratch/scrubbed/wgalvin/casp12/"
+
+  # Needs to match commands in .template files
+  prefix: "run_"
+
+  # these need to have at least everything that matches
+  # {{prefix_command}} in .template files
+  commands:
+    structural_info: |
+      conda activate zernikegrams && \
+      structural-info \
+      --hdf5_out $tmp_path/${split}_struct_${file_idx}_${line_idx}.hdf5 \
+      --pdb_dir $pdb_dir \
+      --pdb_list_file $tmp_path/${split}_${file_idx}_${line_idx}.pdbs \
+      --SASA \
+      --charge \
+      -F \
+      -H \
+      --parallelism 4
+
+    add_noise: |
+      conda activate zernikegrams && \
+        noise-neighborhoods \
+        --hdf5_in $tmp_path/${split}_${file_idx}_struct_NoiseNone.hdf5 \
+        --hdf5_out $tmp_path/${split}_${file_idx}_struct_Noise${seed}.hdf5 \
+        --seed ${seed}
+
+    neighborhoods: |
+      conda activate zernikegrams && \
+        neighborhoods \
+        --hdf5_in  $tmp_path/${split}_${file_idx}_struct_Noise${seed}.hdf5 \
+        --hdf5_out $tmp_path/${split}_${file_idx}_neighb_Noise${seed}.hdf5 \
+        --remove_central_residue \
+        --r_max 10 \
+        --filter_out_chains_not_in_proteinnet \
+        --parallelism 4
+
+    zernikegrams: |
+      conda activate zernikegrams && \
+        zernikegrams \
+        --hdf5_out $final_path/${split}${file_idx}_zgram_Noise${seed}_lmax=5_r=10.0_rst=square.hdf5 \
+        --hdf5_in $tmp_path/${split}_${file_idx}_neighb_Noise${seed}.hdf5 \
+        --parallelism 4 \
+        --rst_normalization square \
+        --radial_func_max 10 \
+        --l_max 5 \
+        --radial_func_mode ks \
+        --channels C,N,O,S,H,SASA,charge
+
+  # Name of each split and a list of file_idxs
+  # Below corresponds to
+  #  casp12_testing.txt       casp12_training__4.txt   casp12_training__9.txt          
+  #  casp12_training__0.txt   casp12_training__5.txt   casp12_training.txt
+  #  casp12_training__1.txt   casp12_training__6.txt   casp12_validation.txt
+  #  casp12_training__2.txt   casp12_training__7.txt    
+  #  casp12_training__3.txt   casp12_training__8.txt   
+  splits:
+    training:
+      file_idx: ["__0", "__1", "__2", "__3", "__4", "__5", "__6", "__7", "__8", "__9"]
+    testing:
+      file_idx: [""]
+    validation:
+      file_idx: [""]
+
+
+# use "{{split}}" to substitute "training" / "testing" / etc (see splits, below)
+# use {{i}} to get ith job of split 
+sbatch:
+  # location of stdout and stderr
+  output: "/gscratch/scrubbed/wgalvin/slurm_outs/{{split}}-{{i}}.log"
+
+  # name of job in squeue
+  job_name: "{{split}}-{{i}}"
+
+  # account and partion for job
+  account: stf
+  partition: ckpt
+
+  # resources for job
+  nodes: 1
+  ntasks: 1
+  cpus-per-task: 4
+  time: "2:00:00"
+  memory: "20GB"
+
+# Parameters for running structural-info
+structural-info:
+  # Path to structural_info slurm template
+  template: "slurm/structural_info.template"
+
+  # directory with pdbs
+  pdb_dir: "/gscratch/stf/gvisan01/casp12/pdbs/"
+
+  # directory containing pdb lists
+  pdb_ids_path: "/gscratch/stf/gvisan01/casp12/pdb_lists"
+
+  # form of pdb_id files.
+  # for example, [casp12_testing.txt, casp12_training__0.txt, ...]
+  # should be casp12_{{split}}{{file_idx}}.txt
+  pdb_ids: "casp12_{{split}}{{file_idx}}.txt"
+
+  # number of proteins per slurm job
+  chunk_size: 100
+
+add-noise:
+  seeds: [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+preprocessing:
+  template: "slurm/preprocess.template"
+
+  
