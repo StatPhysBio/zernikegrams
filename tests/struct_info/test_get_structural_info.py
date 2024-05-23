@@ -11,28 +11,14 @@ MISMATCH_TOL = 0.20  # Tolerance for discrepancies between reference pyrosetta s
 
 
 reference_path = "tests/data/baseline_struct_info._hdf5"
-
-
-@pytest.mark.order("first")
-def test_make_tmpfile():
-    global test_dir
-    global test_path
-    test_dir = tempfile.TemporaryDirectory()
-
-    subprocess.run(
-        f"structural-info --pdb_dir tests/data/pdbs -o {test_dir.name}/test.hdf5 --S -c --DSSP -H".split()
-    )
-
-    test_path = f"{test_dir.name}/test.hdf5"
-    assert os.path.exists(test_path)
-
-
-@pytest.mark.order("last")
-def test_cleanup():
-    test_dir.cleanup()
+test_path = "test.hdf5"
 
 
 def test_secondary_structure_helix_matches_pyrosetta():
+    subprocess.run(
+        f"structural-info --pdb_dir tests/data/pdbs -o {test_path} --S -c --DSSP -H".split()
+    )
+
     reference_ss = {}
     with h5py.File(reference_path) as ref:
         res_ids = ref["data"]["res_ids"]
@@ -59,9 +45,13 @@ def test_secondary_structure_helix_matches_pyrosetta():
                 mismatches += 1
 
     assert mismatches < total * MISMATCH_TOL
+    os.remove(test_path)
 
 
 def test_number_of_atoms_matches_pyrosetta():
+    subprocess.run(
+        f"structural-info --pdb_dir tests/data/pdbs -o {test_path} --S -c --DSSP -H".split()
+    )
     with h5py.File(reference_path) as ref:
         ref_atoms = (
             (ref["data"]["elements"] != b"H") & (ref["data"]["elements"] != b"")
@@ -75,3 +65,4 @@ def test_number_of_atoms_matches_pyrosetta():
         test_H = (test["data"]["elements"] == b"H").sum()
 
     assert np.allclose([ref_atoms, ref_H], [test_atoms, test_H], rtol=MISMATCH_TOL)
+    os.remove(test_path)
