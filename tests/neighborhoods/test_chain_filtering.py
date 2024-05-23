@@ -8,9 +8,9 @@ import hdf5plugin
 
 def test_chain_filtering_small_example():
 
-    os.system('structural-info --hdf5_out sinfo.hdf5 --pdb_dir ../data/pdbs')
+    os.system('structural-info --hdf5_out sinfo.hdf5 --pdb_dir tests/data/pdbs')
     os.system('neighborhoods --hdf5_in sinfo.hdf5 --hdf5_out nbs_all_chains.hdf5 --remove_central_sidechain --keep_central_CA')
-    os.system('neighborhoods --hdf5_in sinfo.hdf5 --hdf5_out nbs_filtered_chains.hdf5 --pdb_chain_pairs_to_consider_filepath ../data/pdbs/pdb_chain_pairs.txt --remove_central_sidechain --keep_central_CA')
+    os.system('neighborhoods --hdf5_in sinfo.hdf5 --hdf5_out nbs_filtered_chains.hdf5 --pdb_chain_pairs_to_consider_filepath tests/data/pdbs/pdb_chain_pairs.txt --remove_central_sidechain --keep_central_CA')
 
 
     with h5py.File('nbs_all_chains.hdf5', "r") as f:
