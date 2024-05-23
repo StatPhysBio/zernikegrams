@@ -9,6 +9,9 @@
 #SBATCH --mem={{memory}}
 #SBATCH --output={{output}}
 
+set -e
+
+data_path={{pdb_ids_path}}
 tmp_path={{tmp_path}}
 split={{split}}
 file_idx={{file_idx}}

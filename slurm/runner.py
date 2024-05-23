@@ -292,7 +292,7 @@ def structural_info(config: Dict) -> Tuple[List[str], Dict[str, List[str]]]:
             file = prepare_commands(file_path, {"split": split, "file_idx": file_idx})
             n_lines = count_lines(file)
 
-            combine_key = f"{file.removesuffix('.txt')}_struct_NoiseNone.hdf5"
+            combine_key = f"{split}_{file_idx}_struct_NoiseNone.hdf5"
             combine_key = os.path.join(f"{config['scripts']['tmp_path']}", os.path.basename(combine_key))
             to_combine[combine_key] = []
 
@@ -369,6 +369,7 @@ def neighborhoods_and_zernikegrams(config: Dict) -> List[str]:
             for seed in config["add-noise"]["seeds"]:
                 replacement_dict = (
                     config["sbatch"]
+                    | config["structural-info"]
                     | config["scripts"]
                     | config["scripts"]["commands"]
                     | {
@@ -406,11 +407,10 @@ def main():
             os.makedirs(path)
 
     structural_info_scripts, to_combine = structural_info(config)
-    submit_and_await_batch(structural_info_scripts, name="structural info")
-    
-    combine_hdf5s(config, to_combine)
-
     zgrams_scripts = neighborhoods_and_zernikegrams(config)
+
+    # submit_and_await_batch(structural_info_scripts, name="structural info")
+    combine_hdf5s(config, to_combine)
     submit_and_await_batch(zgrams_scripts, name="neighborhoods and zernikegrams")
 
 
