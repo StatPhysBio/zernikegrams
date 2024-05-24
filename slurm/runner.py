@@ -28,18 +28,24 @@ def get_jobs(watchers: List[queue.Queue], sleep: int = 10) -> None:
         # JOBID       MIN_CP
         # 17941698      2
         # 17938396     40
-        squeue_output = (
-            subprocess.run(
-                ["squeue", '-o "%.18i %.6c "', "--me"],
-                check=True,
-                stderr=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
+        try:
+            squeue_output = (
+                subprocess.run(
+                    ["squeue", '-o "%.18i %.6c "', "--me"],
+                    check=True,
+                    stderr=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                )
+                .stdout.decode("utf-8")
+                .replace('"', "")
+                .strip()
+                .split("\n")[1:]
             )
-            .stdout.decode("utf-8")
-            .replace('"', "")
-            .strip()
-            .split("\n")[1:]
-        )
+        except subprocess.CalledProcessError:
+            # calling `jobs` was unsuccessful -- possibly
+            #   being ratelimited by hyak
+            time.sleep(120)
+            continue
 
 
         for q in watchers:
@@ -142,7 +148,7 @@ def submit_and_await_batch(scripts: List[str], name: str = None) -> None:
             threads.append(t)
             squeue_consumers.append(squueu_consumer)
 
-        logger.info("Submitted all jobs")
+        logger.info(f"Submitted {len(scripts)} jobs")
 
         squeue_watcher = threading.Thread(target=get_jobs, args=(squeue_consumers,), daemon=True)
         squeue_watcher.start()
@@ -329,6 +335,10 @@ def structural_info(config: Dict) -> Tuple[List[str], Dict[str, List[str]]]:
 
 
 def combine_hdf5s(config: Dict, to_combine: Dict[str, List[str]]) -> None:
+
+    # Let filesystem update (???)
+    time.sleep(30)
+
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -409,7 +419,7 @@ def main():
     structural_info_scripts, to_combine = structural_info(config)
     zgrams_scripts = neighborhoods_and_zernikegrams(config)
 
-    # submit_and_await_batch(structural_info_scripts, name="structural info")
+    submit_and_await_batch(structural_info_scripts, name="structural info")
     combine_hdf5s(config, to_combine)
     submit_and_await_batch(zgrams_scripts, name="neighborhoods and zernikegrams")
 
