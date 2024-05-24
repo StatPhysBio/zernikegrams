@@ -16,7 +16,7 @@ test_path = "test.hdf5"
 
 def test_secondary_structure_helix_matches_pyrosetta():
     subprocess.run(
-        f"structural-info --pdb_dir tests/data/pdbs -o {test_path} --S -c --DSSP -H".split()
+        f"structural-info --pdb_dir tests/data/pdbs --pdb_list_file tests/data/pdbs/ids.txt -o {test_path} --S -c --DSSP -H".split()
     )
 
     reference_ss = {}
@@ -50,7 +50,7 @@ def test_secondary_structure_helix_matches_pyrosetta():
 
 def test_number_of_atoms_matches_pyrosetta():
     subprocess.run(
-        f"structural-info --pdb_dir tests/data/pdbs -o {test_path} --S -c --DSSP -H".split()
+        f"structural-info --pdb_dir tests/data/pdbs --pdb_list_file tests/data/pdbs/ids.txt -o {test_path} --S -c --DSSP -H".split()
     )
     with h5py.File(reference_path) as ref:
         ref_atoms = (

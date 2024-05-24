@@ -71,7 +71,7 @@ def _step_1_reduce(
     return first_model
 
 
-def _step_3_pdbfixer(first_model, temp3):
+def _step_3_pdbfixer(first_model, temp3, hydrogens):
     for chain in first_model:
         for res in chain:
             for atom in res:
@@ -87,7 +87,8 @@ def _step_3_pdbfixer(first_model, temp3):
     fixer.replaceNonstandardResidues()
     fixer.findMissingAtoms()
     fixer.addMissingAtoms()
-    fixer.addMissingHydrogens(7.0)
+    if hydrogens:
+        fixer.addMissingHydrogens(7.0)
     return temp3, fixer
 
 
@@ -171,7 +172,7 @@ def _step_4_fix_numbering(fixer, temp3, temp4):
     return structure_after
 
 
-def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str):
+def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hydrogens: bool, ions: bool):
     """
     Function to clean pdbs using reduce and pdbfixer.
 
@@ -183,26 +184,34 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str):
         Output directory.
     reduce_executable: str
         Path to the reduce executable
+    Hydrogens: bool
+        include hydrogens
+    Ions: bool
+        include ions
     """
 
     pdbid = pdb_input_filename.split("/")[-1].split(".pdb")[0]
 
     # Step 1: Add hydrogens using reduce program
     with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp1:
-        first_model = _step_1_reduce(
-            reduce_executable, pdb_input_filename, pdbid, temp1
-        )
+        if hydrogens:
+            first_model = _step_1_reduce(
+                reduce_executable, pdb_input_filename, pdbid, temp1
+            )
+        else:
+            first_model = PDB_PARSER.get_structure(pdbid, pdb_input_filename)[0]
 
         # Step 2: NonHetSelector filter
         with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp2:
-            # PDBIO.set_structure(first_model)
-            # PDBIO.save(temp2, select=NonHetSelector())
-            # temp2.flush()
-            # first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+            if not ions:
+                PDBIO.set_structure(first_model)
+                PDBIO.save(temp2, select=NonHetSelector())
+                temp2.flush()
+                first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
 
             # Step 3: Replace altloc chars to " " and use pdbfixer
             with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp3:
-                temp_3, fixer = _step_3_pdbfixer(first_model, temp3)
+                temp_3, fixer = _step_3_pdbfixer(first_model, temp3, hydrogens)
 
                 # Step 4: Correct for pdbfixer not preserving insertion codes
                 with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp4:

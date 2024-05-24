@@ -249,6 +249,7 @@ def get_structural_info_from_protein(
     calculate_angles: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
+    ions: bool = True,
     multi_struct: str = "warn",
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
@@ -258,6 +259,7 @@ def get_structural_info_from_protein(
         - calculate_X: if set to false, go faster
         - if set, will fix missing atoms in pdb
         - hydrogens: if set, will add hydrogens to pdb
+        - Ions: if set, ions are left in
         - multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns:
@@ -275,7 +277,7 @@ def get_structural_info_from_protein(
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             with remove_whiteout(tmp_dir):
-                clean_pdb(pdb_file, tmp.name, REDUCER)
+                clean_pdb(pdb_file, tmp.name, REDUCER, hydrogens, ions)
 
         remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
 

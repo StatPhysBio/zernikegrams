@@ -114,7 +114,13 @@ def parse_args():
         "-H",
         action="store_true",
         default=False,
-        help="Use OpenMM to add hydrogen atoms to the incoming PDBs. This implies --fix_pdbs",
+        help="Use Reduce to add hydrogen atoms to the incoming PDBs. This implies --fix_pdbs",
+    )
+    parser.add_argument(
+        "--remove_ions",
+        action="store_true",
+        default=False,
+        help="Filter out ions from PDB"
     )
     parser.add_argument(
         "--handle_multi_structures",
@@ -148,6 +154,7 @@ def get_structural_info_from_dataset(
     DSSP: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
+    ions: bool = True,
     handle_multi_structures: str = "warn",
 ) -> None:
     """
@@ -185,6 +192,8 @@ def get_structural_info_from_dataset(
         Whether or not to fix missing atoms
     Hydrogens: bool
         Whether or not to add hydrogen atoms
+    Ions: bool
+        Whether or not to keep ions
     handle_multi_structures
         Behavior for handling PDBs with multiple structures
     """
@@ -261,6 +270,7 @@ def get_structural_info_from_dataset(
                     "DSSP": DSSP,
                     "fix": fix,
                     "hydrogens": hydrogens,
+                    "ions": ions,
                     "multi_struct": handle_multi_structures,
                 },
                 parallelism=parallelism,
@@ -346,6 +356,7 @@ def get_padded_structural_info(
     angles: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
+    ions: bool = True,
     multi_struct: str = "warn",
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
@@ -363,6 +374,7 @@ def get_padded_structural_info(
     angles: Whether or not to calculate anglges
     Fix: Whether or not to fix missing atoms
     Hydrogens: Whether or not to add hydrogen atoms
+    Ions: Whether or not to keep ions
     multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns
@@ -389,6 +401,7 @@ def get_padded_structural_info(
             calculate_angles=angles,
             fix=fix,
             hydrogens=hydrogens,
+            ions=ions,
             multi_struct=multi_struct,
         )
 
@@ -435,6 +448,7 @@ def main():
         args.DSSP,
         args.fix_pdbs,
         args.add_hydrogens,
+        not args.remove_ions,
         args.handle_multi_structures,
     )
 
