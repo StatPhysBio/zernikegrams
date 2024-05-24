@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from Bio.PDB import (
     PDBParser,
     SASA,
+    PDBIO
 )
 from Bio.PDB.DSSP import dssp_dict_from_pdb_file
 from collections import defaultdict
@@ -238,28 +239,33 @@ def remove_whiteout(tmp_dir):
     finally:
         pdbfixer.pdbfixer.__file__ = true_path
 
+def get_structural_info_from_protein(*args, parser='biopython', **kwargs):
+    if parser == 'biopython':
+        return get_structural_info_from_protein__biopython(*args, **kwargs)
+    elif parser == 'pyrosetta':
+        from zernikegrams.structural_info.pyrosetta_core import get_structural_info_from_protein__pyrosetta
+        return get_structural_info_from_protein__pyrosetta(*args, **kwargs)
+    else:
+        raise ValueError(f"Unknown parser {parser}")
 
-def get_structural_info_from_protein(
+def get_structural_info_from_protein__biopython(
     pdb_file: str,
-    remove_nonwater_hetero: bool = False,
-    remove_waters: bool = True,
     calculate_SASA: bool = True,
     calculate_charge: bool = True,
     calculate_DSSP: bool = True,
     calculate_angles: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
-    ions: bool = True,
+    extra_molecules: bool = True,
     multi_struct: str = "warn",
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
     Params:
         - pdb_file: path to pdb file
-        - remove_nonwater_hetero, remove_waters: whether or not to remove certain atoms
         - calculate_X: if set to false, go faster
         - if set, will fix missing atoms in pdb
         - hydrogens: if set, will add hydrogens to pdb
-        - Ions: if set, ions are left in
+        - extra_molecules: if set, extra_molecules are left in
         - multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns:
@@ -277,13 +283,17 @@ def get_structural_info_from_protein(
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             with remove_whiteout(tmp_dir):
-                clean_pdb(pdb_file, tmp.name, REDUCER, hydrogens, ions)
+                clean_pdb(pdb_file, tmp.name, REDUCER, hydrogens, extra_molecules)
 
         remove_waters_pdb(original=tmp.name, waterless=tmp.name, header=True)
 
         pdb_file = tmp.name
 
     structure = parser.get_structure(pdb_name, pdb_file)
+
+    # pdbio = PDBIO()
+    # pdbio.set_structure(structure)
+    # pdbio.save(f"{pdb_name}_cleaned.pdb")
 
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
@@ -350,12 +360,6 @@ def get_structural_info_from_protein(
     # get structural info from each residue in the protein
     for atom in structure.get_atoms():
         atom_full_id = atom.get_full_id()
-
-        if remove_waters and atom_full_id[3][0] == "W":
-            continue
-
-        if remove_nonwater_hetero and atom_full_id[3][0] not in {" " "W"}:
-            continue
 
         chain = atom_full_id[2]
         resnum = atom_full_id[3][1]

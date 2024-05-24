@@ -172,7 +172,7 @@ def _step_4_fix_numbering(fixer, temp3, temp4):
     return structure_after
 
 
-def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hydrogens: bool, ions: bool):
+def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hydrogens: bool, extra_molecules: bool):
     """
     Function to clean pdbs using reduce and pdbfixer.
 
@@ -186,8 +186,8 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hy
         Path to the reduce executable
     Hydrogens: bool
         include hydrogens
-    Ions: bool
-        include ions
+    extra_molecules: bool
+        include extra_molecules
     """
 
     pdbid = pdb_input_filename.split("/")[-1].split(".pdb")[0]
@@ -203,7 +203,7 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hy
 
         # Step 2: NonHetSelector filter
         with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp2:
-            if not ions:
+            if not extra_molecules:
                 PDBIO.set_structure(first_model)
                 PDBIO.save(temp2, select=NonHetSelector())
                 temp2.flush()
