@@ -347,7 +347,6 @@ def get_neighborhoods_from_dataset(
 
                     if neighborhoods_per_protein == 0:
                         logger.warning(f"No neighborhoods for {pdb}, possibly because no pdb_chain pair with this pdb is present in the file. Skipping.")
-                        bar.next()
                         pdbs_fail.append(pdb)
                         continue
 
