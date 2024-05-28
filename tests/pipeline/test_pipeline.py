@@ -48,7 +48,7 @@ def test_get_zernikegrams_from_pdbfile():
 
     os.system(f'structural-info \
                     --hdf5_out sinfo.hdf5 \
-                    --pdb_dir ../data/pdbs \
+                    --pdb_dir tests/data/pdbs \
                     --parser biopython \
                     --SASA \
                     --charge \
@@ -77,7 +77,7 @@ def test_get_zernikegrams_from_pdbfile():
         zgrams_from_scripts = f['data']['zernikegram'][f['data']['res_id'][:, 1] == pdbid]
 
 
-    data_from_pipeline = get_zernikegrams_from_pdbfile(f"../data/pdbs/{pdbid.decode('utf-8')}.pdb",
+    data_from_pipeline = get_zernikegrams_from_pdbfile(f"tests/data/pdbs/{pdbid.decode('utf-8')}.pdb",
                                                         get_structural_info_kwargs__template,
                                                         get_neighborhoods_kwargs__template,
                                                         get_zernikegrams_kwargs__template)

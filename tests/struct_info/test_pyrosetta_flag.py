@@ -4,11 +4,17 @@ import h5py
 import hdf5plugin
 import numpy as np
 
-reference_path = "../data/baseline_struct_info._hdf5"
+reference_path = "tests/data/baseline_struct_info._hdf5"
 
 def test_pyrosetta_flag():
 
-    os.system('structural-info --hdf5_out sinfo_pyrosetta_default.hdf5 --pdb_dir ../data/pdbs --parser pyrosetta -F -H -S -c --DSSP')
+    try:
+        import pyrosetta
+    except ModuleNotFoundError:
+        print("[warning] Cannot import pyrosetta -- skipping pyrosetta test")
+        return 
+
+    os.system('structural-info --hdf5_out sinfo_pyrosetta_default.hdf5 --pdb_dir tests/data/pdbs --parser pyrosetta -F -H -S -c --DSSP')
     
     ref_pdb = b'2fe3'
 
