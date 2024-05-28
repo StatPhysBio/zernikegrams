@@ -23,7 +23,7 @@ def test_no_hydrogens_respected():
             tmp.name,
             "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
             hydrogens=False,
-            ions=False
+            extra_molecules=False
         )
 
         assert count_element_atoms(tmp.name, "H") == 0
@@ -36,33 +36,33 @@ def test_yes_hydorgens_adds_H():
             tmp.name,
             "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
             hydrogens=True,
-            ions=False
+            extra_molecules=False
         )
 
         assert count_element_atoms(tmp.name, "H") > 0
 
 
-def test_no_ions_removes_FE():
+def test_no_extra_molecules_removes_FE():
     with tempfile.NamedTemporaryFile() as tmp:
         clean_pdb(
             "tests/data/pdbs/1MBO.pdb",
             tmp.name,
             "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
             hydrogens=False,
-            ions=False
+            extra_molecules=False
         )
 
         assert count_element_atoms(tmp.name, "FE") == 0
 
 
-def test_yes_ions_keeps_FE():
+def test_yes_extra_molecules_keeps_FE():
     with tempfile.NamedTemporaryFile() as tmp:
         clean_pdb(
             "tests/data/pdbs/1MBO.pdb",
             tmp.name,
             "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
             hydrogens=False,
-            ions=True
+            extra_molecules=True
         )
 
         assert count_element_atoms(tmp.name, "FE") == 1 

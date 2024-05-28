@@ -122,7 +122,7 @@ def get_one_zernikegram(
     return hgm
 
 
-def get_zernikegrams(
+def get_holograms_fn(
     nbs: np.ndarray,  # of custom dtype
     r_max: float,
     radial_func_max: int,

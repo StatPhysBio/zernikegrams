@@ -2,13 +2,11 @@ import argparse
 import h5py
 import hdf5plugin
 import os
+import sys
 import sqlitedict
 import time
 
-from typing import (
-    List,
-    Tuple,
-)
+from typing import *
 from rich.progress import Progress
 
 import numpy as np
@@ -48,6 +46,15 @@ def parse_args():
         default="data",
     )
     parser.add_argument(
+        "--parser",
+        type=str,
+        default="biopython",
+        choices=["biopython", "pyrosetta"],
+        help="Parser to use for reading PDBs. Options are 'biopython' or 'pyrosetta'. The 'biopython' option uses biopython, pdbfixer, and reduce to process the structures.\
+              The 'pyrosetta' option uses pyrosetta to process the structures. The 'pyrosetta' option requires a pyrosetta license. \
+              The 'pyrosetta' option automatically adds hydrogens to the structures, it keeps all extra molecules except for water, and it does not substitute non-canonical residues.",
+    )
+    parser.add_argument(
         "--pdb_list_file",
         type=str,
         help="Path to file containing list of PDB files of interest, one per row. Required if --foldcomp is not set",
@@ -75,7 +82,6 @@ def parse_args():
         help="max number of atoms per protein, for padding purposes",
         default=200000,
     )
-    parser.add_argument("--logging", type=str, help="logging level", default="INFO")
     parser.add_argument(
         "--angle_db", type=str, help="path to chi angle database", default=None
     )
@@ -117,10 +123,10 @@ def parse_args():
         help="Use Reduce to add hydrogen atoms to the incoming PDBs. This implies --fix_pdbs",
     )
     parser.add_argument(
-        "--remove_ions",
+        "--remove_extra_molecules",
         action="store_true",
         default=False,
-        help="Filter out ions from PDB"
+        help="Filter out extra_molecules from PDB"
     )
     parser.add_argument(
         "--handle_multi_structures",
@@ -129,6 +135,7 @@ def parse_args():
         choices=["crash", "warn", "allow"],
         help="Behavior for handling PDBs with multiple structures",
     )
+    parser.add_argument("--logging", type=str, help="logging level", default="INFO")
 
     args = parser.parse_args()
     if args.pdb_dir is None and args.foldcomp is None:
@@ -137,7 +144,111 @@ def parse_args():
         raise ValueError(msg)
 
     args.input_path = args.foldcomp if args.foldcomp is not None else args.pdb_dir
+
+    if args.parser == "pyrosetta":
+        print("Warning: Using pyrosetta for parsing. The 'pyrosetta' option automatically adds hydrogens to the structures, it keeps all extra molecules except for water, and it does not substitute non-canonical residues.")
+
     return args
+
+
+def get_structural_info_fn(pdb_file: str,
+                            parser: str = 'biopython',
+                            padded_length: Optional[int] = None,
+                            SASA: bool = True,
+                            charge: bool = True,
+                            DSSP: bool = True,
+                            angles: bool = True,
+                            fix: bool = False,
+                            hydrogens: bool = False,
+                            extra_molecules: bool = True,
+                            multi_struct: str = "warn"):
+
+    """
+    Get structural info from a single pdb file.
+    If padded_length is None, does not pad the protein.
+    """
+
+    if isinstance(pdb_file, str):
+        L = len(pdb_file.split('/')[-1].split('.')[0])
+    else:
+        L = len(pdb_file[0].split('/')[-1].split('.')[0])
+        for i in range(1, len(pdb_file)):
+            L = max(L, len(pdb_file[i].split('/')[-1].split('.')[0]))
+
+    if isinstance(pdb_file, str):
+        pdb_file = [pdb_file]
+    
+
+    n = 0
+    for i, pdb_file in enumerate(pdb_file):
+
+        if padded_length is None:
+            si = get_structural_info_from_protein(
+                    pdb_file,
+                    parser=parser,
+                    calculate_SASA=SASA,
+                    calculate_charge=charge,
+                    calculate_DSSP=DSSP,
+                    calculate_angles=angles,
+                    fix=fix,
+                    hydrogens=hydrogens,
+                    extra_molecules=extra_molecules,
+                    multi_struct=multi_struct)
+        else:
+            si = get_padded_structural_info(
+                    pdb_file,
+                    parser=parser,
+                    padded_length=padded_length,
+                    SASA=SASA,
+                    charge=charge,
+                    DSSP=DSSP,
+                    angles=angles,
+                    fix=fix,
+                    hydrogens=hydrogens,
+                    extra_molecules=extra_molecules,
+                    multi_struct=multi_struct)
+
+        if si[0] is None:
+            print(f"Failed to process {pdb_file}", file=sys.stderr)
+            continue
+
+        try:
+            pdb,atom_names,elements,res_ids,coords,sasas,charges,res_ids_per_residue,angles,vecs,multi_struc = si
+        except ValueError:
+            pdb,(atom_names,elements,res_ids,coords,sasas,charges,res_ids_per_residue,angles,vecs,multi_struc) = si
+
+        if n == 0:
+            if padded_length is None:
+                length = len(atom_names)
+                dt = np.dtype([
+                    ('pdb',f'S{L}',()),
+                    ('atom_names', 'S4', (length)),
+                    ('elements', 'S2', (length)),
+                    ('res_ids', f'S{L}', (length, 6)),
+                    ('coords', 'f4', (length, 3)),
+                    ('SASAs', 'f4', (length)),
+                    ('charges', 'f4', (length)),
+                ])
+            else:
+                dt = np.dtype([
+                    ('pdb',f'S{L}',()),
+                    ('atom_names', 'S4', (padded_length)),
+                    ('elements', 'S2', (padded_length)),
+                    ('res_ids', f'S{L}', (padded_length, 6)),
+                    ('coords', 'f4', (padded_length, 3)),
+                    ('SASAs', 'f4', (padded_length)),
+                    ('charges', 'f4', (padded_length)),
+                ])
+            
+            np_protein = np.zeros(shape=(len(pdb_file),), dtype=dt)
+
+        np_protein[n] = (pdb,atom_names,elements,res_ids,coords,sasas,charges,)
+        
+        n += 1
+
+    np_protein.resize((n,))
+
+    return np_protein
 
 
 def get_structural_info_from_dataset(
@@ -147,6 +258,7 @@ def get_structural_info_from_dataset(
     hdf5_out: str,
     output_dataset_name: str,
     parallelism: int,
+    parser: str = 'biopython',
     angle_db: str = None,
     vec_db: str = None,
     SASA: bool = True,
@@ -154,7 +266,7 @@ def get_structural_info_from_dataset(
     DSSP: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
-    ions: bool = True,
+    extra_molecules: bool = True,
     handle_multi_structures: str = "warn",
 ) -> None:
     """
@@ -176,6 +288,8 @@ def get_structural_info_from_dataset(
         Path to hdf5 file to write
     parallelism : int
         Number of workers to use
+    parser : str
+        Parser to use for reading PDBs. Options are 'biopython' or 'pyrosetta'. The 'biopython' option uses biopython, pdbfixer, and reduce to process the structures.
     angle_db : str | None
         If set, path to sqlite db to store chi angles.
         Keys will be residue IDs and values will be up to four chi angles
@@ -192,8 +306,8 @@ def get_structural_info_from_dataset(
         Whether or not to fix missing atoms
     Hydrogens: bool
         Whether or not to add hydrogen atoms
-    Ions: bool
-        Whether or not to keep ions
+    extra_molecules: bool
+        Whether or not to keep extra_molecules
     handle_multi_structures
         Behavior for handling PDBs with multiple structures
     """
@@ -263,6 +377,7 @@ def get_structural_info_from_dataset(
                 callback=get_padded_structural_info,
                 limit=None,
                 params={
+                    "parser": parser,
                     "padded_length": max_atoms,
                     "SASA": SASA,
                     "charge": charge,
@@ -270,7 +385,7 @@ def get_structural_info_from_dataset(
                     "DSSP": DSSP,
                     "fix": fix,
                     "hydrogens": hydrogens,
-                    "ions": ions,
+                    "extra_molecules": extra_molecules,
                     "multi_struct": handle_multi_structures,
                 },
                 parallelism=parallelism,
@@ -349,6 +464,7 @@ def get_structural_info_from_dataset(
 
 def get_padded_structural_info(
     pdb_file: str,
+    parser: str = "biopython",
     padded_length: int = 200000,
     SASA: bool = True,
     charge: bool = True,
@@ -356,7 +472,7 @@ def get_padded_structural_info(
     angles: bool = True,
     fix: bool = False,
     hydrogens: bool = False,
-    ions: bool = True,
+    extra_molecules: bool = True,
     multi_struct: str = "warn",
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
@@ -367,6 +483,7 @@ def get_padded_structural_info(
     Parameters
     ----------
     pdb_file: path to file with pdb
+    parser: parser to use for reading PDBs
     padded_length: size to pad to
     SASA: Whether or not to calculate SASA
     charge: Whether or not to calculate charge
@@ -374,7 +491,7 @@ def get_padded_structural_info(
     angles: Whether or not to calculate anglges
     Fix: Whether or not to fix missing atoms
     Hydrogens: Whether or not to add hydrogen atoms
-    Ions: Whether or not to keep ions
+    extra_molecules: Whether or not to keep extra_molecules
     multi_struct: Behavior for handling PDBs with multiple structures
 
     Returns
@@ -395,13 +512,14 @@ def get_padded_structural_info(
     try:
         pdb, ragged_structural_info = get_structural_info_from_protein(
             pdb_file,
+            parser=parser,
             calculate_SASA=SASA,
             calculate_charge=charge,
             calculate_DSSP=DSSP,
             calculate_angles=angles,
             fix=fix,
             hydrogens=hydrogens,
-            ions=ions,
+            extra_molecules=extra_molecules,
             multi_struct=multi_struct,
         )
 
@@ -441,6 +559,7 @@ def main():
         args.hdf5_out,
         args.output_dataset_name,
         args.parallelism,
+        args.parser,
         args.angle_db,
         args.vec_db,
         args.SASA,
@@ -448,7 +567,7 @@ def main():
         args.DSSP,
         args.fix_pdbs,
         args.add_hydrogens,
-        not args.remove_ions,
+        not args.remove_extra_molecules,
         args.handle_multi_structures,
     )
 
