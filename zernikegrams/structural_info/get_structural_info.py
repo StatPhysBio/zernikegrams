@@ -2,13 +2,11 @@ import argparse
 import h5py
 import hdf5plugin
 import os
+import sys
 import sqlitedict
 import time
 
-from typing import (
-    List,
-    Tuple,
-)
+from typing import *
 from rich.progress import Progress
 
 import numpy as np
@@ -151,6 +149,106 @@ def parse_args():
         print("Warning: Using pyrosetta for parsing. The 'pyrosetta' option automatically adds hydrogens to the structures, it keeps all extra molecules except for water, and it does not substitute non-canonical residues.")
 
     return args
+
+
+def get_structural_info_fn(pdb_file: str,
+                            parser: str = 'biopython',
+                            padded_length: Optional[int] = None,
+                            SASA: bool = True,
+                            charge: bool = True,
+                            DSSP: bool = True,
+                            angles: bool = True,
+                            fix: bool = False,
+                            hydrogens: bool = False,
+                            extra_molecules: bool = True,
+                            multi_struct: str = "warn"):
+
+    """
+    Get structural info from a single pdb file.
+    If padded_length is None, does not pad the protein.
+    """
+
+    if isinstance(pdb_file, str):
+        L = len(pdb_file.split('/')[-1].split('.')[0])
+    else:
+        L = len(pdb_file[0].split('/')[-1].split('.')[0])
+        for i in range(1, len(pdb_file)):
+            L = max(L, len(pdb_file[i].split('/')[-1].split('.')[0]))
+
+    if isinstance(pdb_file, str):
+        pdb_file = [pdb_file]
+    
+
+    n = 0
+    for i, pdb_file in enumerate(pdb_file):
+
+        if padded_length is None:
+            si = get_structural_info_from_protein(
+                    pdb_file,
+                    parser=parser,
+                    calculate_SASA=SASA,
+                    calculate_charge=charge,
+                    calculate_DSSP=DSSP,
+                    calculate_angles=angles,
+                    fix=fix,
+                    hydrogens=hydrogens,
+                    extra_molecules=extra_molecules,
+                    multi_struct=multi_struct)
+        else:
+            si = get_padded_structural_info(
+                    pdb_file,
+                    parser=parser,
+                    padded_length=padded_length,
+                    SASA=SASA,
+                    charge=charge,
+                    DSSP=DSSP,
+                    angles=angles,
+                    fix=fix,
+                    hydrogens=hydrogens,
+                    extra_molecules=extra_molecules,
+                    multi_struct=multi_struct)
+
+        if si[0] is None:
+            print(f"Failed to process {pdb_file}", file=sys.stderr)
+            continue
+
+        try:
+            pdb,atom_names,elements,res_ids,coords,sasas,charges,res_ids_per_residue,angles,vecs,multi_struc = si
+        except ValueError:
+            pdb,(atom_names,elements,res_ids,coords,sasas,charges,res_ids_per_residue,angles,vecs,multi_struc) = si
+
+        if n == 0:
+            if padded_length is None:
+                length = len(atom_names)
+                dt = np.dtype([
+                    ('pdb',f'S{L}',()),
+                    ('atom_names', 'S4', (length)),
+                    ('elements', 'S2', (length)),
+                    ('res_ids', f'S{L}', (length, 6)),
+                    ('coords', 'f4', (length, 3)),
+                    ('SASAs', 'f4', (length)),
+                    ('charges', 'f4', (length)),
+                ])
+            else:
+                dt = np.dtype([
+                    ('pdb',f'S{L}',()),
+                    ('atom_names', 'S4', (padded_length)),
+                    ('elements', 'S2', (padded_length)),
+                    ('res_ids', f'S{L}', (padded_length, 6)),
+                    ('coords', 'f4', (padded_length, 3)),
+                    ('SASAs', 'f4', (padded_length)),
+                    ('charges', 'f4', (padded_length)),
+                ])
+            
+            np_protein = np.zeros(shape=(len(pdb_file),), dtype=dt)
+
+        np_protein[n] = (pdb,atom_names,elements,res_ids,coords,sasas,charges,)
+        
+        n += 1
+
+    np_protein.resize((n,))
+
+    return np_protein
 
 
 def get_structural_info_from_dataset(

@@ -24,7 +24,7 @@ from zernikegrams.utils import log_config as logging
 logger = logging.getLogger(__name__)
 
 
-def get_neighborhoods(
+def get_neighborhoods_fn(
     proteins: np.ndarray,
     r_max: float,
     remove_central_residue: bool = False,
