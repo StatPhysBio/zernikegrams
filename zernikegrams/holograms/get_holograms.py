@@ -55,6 +55,7 @@ def get_one_zernikegram(
     rst_normalization: Optional[str] = None,
     radial_func_mode="ns",
     keep_zeros: bool = False,
+    **kwargs, 
 ) -> np.ndarray:
 
     if backbone_only:
@@ -273,6 +274,7 @@ def get_single_zernikegram(
     request_frame: bool = False,
     sph_harm_normalization: str = "component",
     rst_normalization: Optional[str] = None,
+    **kwargs,
 ):
 
     if np_nh["res_id"][0].decode("utf-8") in {"Z", "X"}:
