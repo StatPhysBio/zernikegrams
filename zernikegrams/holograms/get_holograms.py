@@ -123,7 +123,7 @@ def get_one_zernikegram(
     return hgm
 
 
-def get_zernikegrams(
+def get_holograms_fn(
     nbs: np.ndarray,  # of custom dtype
     r_max: float,
     radial_func_max: int,
@@ -532,13 +532,21 @@ def get_zernikegrams_from_dataset(
                     )
                 ):
                     if hgm is None or hgm[0] is None:
-                        bar.next()
+                        bar.update(
+                            task,
+                            advance=1,
+                            description=f"zernikegrams: {n}/{ds.count()}",
+                        )
                         logger.warn("error")
                         continue
                     f["nh_list"][n] = hgm[1]
                     f[output_dataset_name][n] = hgm[0]
                     # print(hgm[0].shape)
-                    bar.next()
+                    bar.update(
+                            task,
+                            advance=1,
+                            description=f"zernikegrams: {n}/{ds.count()}",
+                        )
                     n += 1
 
                     logger.info(f"{hgm['zernikegram'].shape=}")

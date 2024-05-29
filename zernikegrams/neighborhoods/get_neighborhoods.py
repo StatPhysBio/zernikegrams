@@ -24,7 +24,7 @@ from zernikegrams.utils import log_config as logging
 logger = logging.getLogger(__name__)
 
 
-def get_neighborhoods(
+def get_neighborhoods_fn(
     proteins: np.ndarray,
     r_max: float,
     remove_central_residue: bool = False,
@@ -347,7 +347,6 @@ def get_neighborhoods_from_dataset(
 
                     if neighborhoods_per_protein == 0:
                         logger.warning(f"No neighborhoods for {pdb}, possibly because no pdb_chain pair with this pdb is present in the file. Skipping.")
-                        bar.next()
                         pdbs_fail.append(pdb)
                         continue
 
