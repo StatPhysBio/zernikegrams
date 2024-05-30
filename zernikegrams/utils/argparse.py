@@ -92,3 +92,29 @@ def args_to_dict(args: argparse.ArgumentParser, ignore_params: Optional[Set] = N
             value = ",".join(list(map(lambda x: str(x), value)))
         adict[arg] = value
     return adict
+
+
+def comma_sep_list_of_int_or_float_or_bool(astr: Union[str, None]) -> List[Union[int, float, bool]]:
+    if astr is None or astr.lower() == None:
+        return None 
+    
+    astr = astr.replace(" ","").removeprefix("[").removesuffix("]")
+    
+    ret_val = []
+    for item in astr.split(","):
+        if item.lower() == "true":
+            ret_val.append(True)
+            continue
+        if item.lower() == "false":
+            ret_val.append(False)
+            continue
+        for type in (int, float):
+            try:
+                ret_val.append(type(item))
+                break
+            except:
+                pass
+        else:
+            raise ValueError(f"cannot parse {item} into int, float, or bool")
+
+    return ret_val
