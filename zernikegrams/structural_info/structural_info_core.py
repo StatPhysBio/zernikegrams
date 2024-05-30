@@ -258,6 +258,7 @@ def get_structural_info_from_protein__biopython(
     hydrogens: bool = False,
     extra_molecules: bool = True,
     multi_struct: str = "warn",
+    fixed_pdb_dir: str = None,
 ) -> Tuple[str, Tuple[npt.NDArray, npt.NDArray, npt.NDArray, npt.NDArray]]:
     """
     Params:
@@ -267,6 +268,7 @@ def get_structural_info_from_protein__biopython(
         - hydrogens: if set, will add hydrogens to pdb
         - extra_molecules: if set, extra_molecules are left in
         - multi_struct: Behavior for handling PDBs with multiple structures
+        - fixed_pdb_dir: directory to save fixed pdbs
 
     Returns:
         Tuple of (pdb, (atom_names, elements, res_ids, coords, sasas, charges, res_ids_per_residue, angles, norm_vecs, is_multi_model [1 or 0] ))
@@ -291,15 +293,20 @@ def get_structural_info_from_protein__biopython(
 
     structure = parser.get_structure(pdb_name, pdb_file)
 
-    # pdbio = PDBIO()
-    # pdbio.set_structure(structure)
-    # pdbio.save(f"{pdb_name}_cleaned.pdb")
 
     # assume the pdb name was provided as id to create the structure
     pdb = structure.get_id()
     pdb = os.path.basename(pdb).replace(
         "_", "-"
     )  # "_" is reserved for the res_id delimiter later in pipeline
+
+    if fixed_pdb_dir is not None:
+        if not os.path.exists(fixed_pdb_dir):
+            os.makedirs(fixed_pdb_dir)
+        pdbio = PDBIO()
+        pdbio.set_structure(structure)
+        save_path = os.path.join(fixed_pdb_dir, f"{pdb}.pdb")
+        pdbio.save(save_path)
 
     models = list(structure.get_models())
     if len(models) != 1:

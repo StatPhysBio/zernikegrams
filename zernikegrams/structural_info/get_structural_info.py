@@ -136,6 +136,11 @@ def parse_args():
         help="Behavior for handling PDBs with multiple structures",
     )
     parser.add_argument("--logging", type=str, help="logging level", default="INFO")
+    parser.add_argument(
+        "--fixed_pdb_dir",
+        type=str,
+        help="[Optional] Directory to save fixed pdb files, if -F or -H is selected"
+    )
 
     args = parser.parse_args()
     if args.pdb_dir is None and args.foldcomp is None:
@@ -268,6 +273,7 @@ def get_structural_info_from_dataset(
     hydrogens: bool = False,
     extra_molecules: bool = True,
     handle_multi_structures: str = "warn",
+    fixed_pdb_dir: str = None,
 ) -> None:
     """
     Parallel processing of PDBs into structural info
@@ -310,6 +316,8 @@ def get_structural_info_from_dataset(
         Whether or not to keep extra_molecules
     handle_multi_structures
         Behavior for handling PDBs with multiple structures
+    Fixed_pdb_dir
+        Directory to save fixed pdbs
     """
     if os.path.isdir(input_path):
         pdb_dir = input_path
@@ -387,6 +395,7 @@ def get_structural_info_from_dataset(
                     "hydrogens": hydrogens,
                     "extra_molecules": extra_molecules,
                     "multi_struct": handle_multi_structures,
+                    "fixed_pdb_dir": fixed_pdb_dir,
                 },
                 parallelism=parallelism,
             ):
@@ -474,6 +483,7 @@ def get_padded_structural_info(
     hydrogens: bool = False,
     extra_molecules: bool = True,
     multi_struct: str = "warn",
+    fixed_pdb_dir: str = None,
 ) -> Tuple[
     bytes, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
 ]:
@@ -493,6 +503,7 @@ def get_padded_structural_info(
     Hydrogens: Whether or not to add hydrogen atoms
     extra_molecules: Whether or not to keep extra_molecules
     multi_struct: Behavior for handling PDBs with multiple structures
+    fixed_pdb_dir: Directory to save fixed pdbs
 
     Returns
     -------
@@ -521,6 +532,7 @@ def get_padded_structural_info(
             hydrogens=hydrogens,
             extra_molecules=extra_molecules,
             multi_struct=multi_struct,
+            fixed_pdb_dir=fixed_pdb_dir,
         )
 
         mat_structural_info = pad_structural_info(
@@ -569,6 +581,7 @@ def main():
         args.add_hydrogens,
         not args.remove_extra_molecules,
         args.handle_multi_structures,
+        args.fixed_pdb_dir,
     )
 
     logger.info(f"Total time = {time.time() - start_time:.2f} seconds")
