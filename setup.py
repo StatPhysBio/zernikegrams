@@ -9,7 +9,7 @@ class CustomInstall(install):
         install.run(self)
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        reduce_path = os.path.join(dir_path, "zernikegrams/structural_info/reduce")
+        reduce_path = os.path.join(dir_path, "zernikegrams/dependencies/reduce")
         os.makedirs(reduce_path, exist_ok=True)
         os.chdir(reduce_path)
         subprocess.run(["unzip", "reduce.zip"])
