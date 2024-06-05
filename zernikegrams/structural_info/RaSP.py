@@ -40,6 +40,16 @@ class NonHetSelector(Bio.PDB.Select):
             or atom.get_altloc() == "1"
         ) and atom.id[0] in ["C", "H", "N", "O", "S", "P"]
 
+class FirstDisorderedSelector(Bio.PDB.Select):
+    """Choose first conformation of disordered atoms"""
+
+    def accept_atom(self, atom):
+        return (
+            not atom.is_disordered()
+            or atom.get_altloc() == "A"
+            or atom.get_altloc() == "1"
+        ) and atom.id[0] in ["C", "H", "N", "O", "S", "P"]
+
 
 class PDBFixerResIdentifiabilityIssue(Exception):
     pass
@@ -187,7 +197,7 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hy
     Hydrogens: bool
         include hydrogens
     extra_molecules: bool
-        include extra_molecules
+        include extra_molecules (whatever is flagged as hetero)
     """
 
     pdbid = pdb_input_filename.split("/")[-1].split(".pdb")[0]
@@ -203,9 +213,15 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hy
 
         # Step 2: NonHetSelector filter
         with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp2:
+
             if not extra_molecules:
                 PDBIO.set_structure(first_model)
                 PDBIO.save(temp2, select=NonHetSelector())
+                temp2.flush()
+                first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+            else:
+                PDBIO.set_structure(first_model)
+                PDBIO.save(temp2, select=FirstDisorderedSelector())
                 temp2.flush()
                 first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
 
