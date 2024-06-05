@@ -7,7 +7,12 @@ import subprocess
 class CustomInstall(install):
     def run(self):
         install.run(self)
+        
+        self.install_reduce()
+        self.install_pdb_fixer()
+        
 
+    def install_reduce(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         reduce_path = os.path.join(dir_path, "dependencies/reduce")
         os.makedirs(reduce_path, exist_ok=True)
@@ -24,6 +29,31 @@ class CustomInstall(install):
 
         os.chdir(dir_path)
 
+
+    def install_openmm():
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        openmm_path = os.path.join(dir_path, "dependencies/openmm")
+        os.makedirs(openmm_path, exist_ok=True)
+        os.chdir(openmm_path)
+        subprocess.run(["unzip", "openmm.zip"])
+        os.chdir(os.path.join(openmm_path, "openmm"))
+
+        subprocess.run(["python", "setup.py", "install"])
+
+        os.chdir(dir_path)
+
+    
+    def install_pdb_fixer():
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        pdbfixer_path = os.path.join(dir_path, "dependencies/pdbfixer")
+        os.makedirs(pdbfixer_path, exist_ok=True)
+        os.chdir(pdbfixer_path)
+        subprocess.run(["unzip", "pdbfixer.zip"])
+        os.chdir(os.path.join(pdbfixer_path, "pdbfixer"))
+
+        subprocess.run(["devtools/packaging/install.sh"])
+
+        os.chdir(dir_path)
 
 setuptools.setup(
     name="zernikegrams",

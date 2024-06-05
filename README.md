@@ -1,6 +1,14 @@
 # Zernikegrams
 
 ## Installation
+Install with pip: 
+```
+pip install zernikegrams
+```
+
+### Dependencies
+To successfully install with `pip install zernikegrams`, you must be able to install `pyopencl` and `h5py` with pip. Most machines can do this with no extra configuration. If yours is not one of them, install `ocl-icd-opencl-dev` and `libhdf5-dev` through your system's package manager.
+
 This package currently depends on packages which can only be installed with `conda` or built from source, so a conda environment is recommended. 
 1. Clone this repo and `cd zernikegrams/`
 2.  
