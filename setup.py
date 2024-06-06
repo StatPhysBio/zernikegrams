@@ -2,6 +2,7 @@ import setuptools
 from setuptools.command.install import install
 import os
 import subprocess
+import shutil
 
 
 class CustomInstall(install):
@@ -9,28 +10,26 @@ class CustomInstall(install):
         install.run(self)
         
         self.install_reduce()
+        self.install_openmm()
         self.install_pdb_fixer()
         
 
     def install_reduce(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        reduce_path = os.path.join(dir_path, "dependencies/reduce")
-        os.makedirs(reduce_path, exist_ok=True)
+        reduce_path = os.path.join(dir_path, "zernikegrams/structural_info/reduce")
+        dep_reduce_path = os.path.join(dir_path, "dependencies/reduce/reduce.zip")
+        shutil.copyfile(dep_reduce_path, os.path.join(reduce_path, "reduce.zip"))
         os.chdir(reduce_path)
         subprocess.run(["unzip", "reduce.zip"])
         os.chdir(os.path.join(reduce_path, "reduce"))
 
-        subprocess.run(["make", "clean"])
         subprocess.run(["make"])
 
-        # reduce's tests break our tests
-        with open(os.path.join(reduce_path, "reduce/test/test_reduce.py"), "w") as w:
-            w.write("\n")
-
         os.chdir(dir_path)
+        
 
 
-    def install_openmm():
+    def install_openmm(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         openmm_path = os.path.join(dir_path, "dependencies/openmm")
         os.makedirs(openmm_path, exist_ok=True)
@@ -38,12 +37,12 @@ class CustomInstall(install):
         subprocess.run(["unzip", "openmm.zip"])
         os.chdir(os.path.join(openmm_path, "openmm"))
 
-        subprocess.run(["python", "setup.py", "install"])
+        subprocess.run(["devtools/packaging/install.sh"])
 
         os.chdir(dir_path)
 
     
-    def install_pdb_fixer():
+    def install_pdb_fixer(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         pdbfixer_path = os.path.join(dir_path, "dependencies/pdbfixer")
         os.makedirs(pdbfixer_path, exist_ok=True)
@@ -51,9 +50,11 @@ class CustomInstall(install):
         subprocess.run(["unzip", "pdbfixer.zip"])
         os.chdir(os.path.join(pdbfixer_path, "pdbfixer"))
 
-        subprocess.run(["devtools/packaging/install.sh"])
+        subprocess.run(["python", "setup.py", "install"])
 
         os.chdir(dir_path)
+
+
 
 setuptools.setup(
     name="zernikegrams",
@@ -73,4 +74,21 @@ setuptools.setup(
     },
     include_package_data=True,
     cmdclass={"install": CustomInstall},
+    install_requires=[
+        "argparse",
+        "biopython",
+        "cmake",
+        "foldcomp",
+        "h5py",
+        "hdf5plugin",
+        "numpy<2", # pinned for openmm
+        "pyopencl",
+        "pytest",
+        "torch",
+        "rich",
+        "scikit-learn",
+        "sqlitedict",
+        "stopit",
+        "pyyaml",
+    ]
 )
