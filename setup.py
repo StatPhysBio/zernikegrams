@@ -43,4 +43,21 @@ setuptools.setup(
     },
     include_package_data=True,
     cmdclass={"install": CustomInstall},
+    install_requires=[
+        "argparse",
+        "biopython",
+        "cmake",
+        "foldcomp",
+        "h5py",
+        "hdf5plugin",
+        "numpy<2", # pinned for openmm
+        "pyopencl",
+        "pytest",
+        "torch",
+        "rich",
+        "scikit-learn",
+        "sqlitedict",
+        "stopit",
+        "pyyaml",
+    ]
 )
