@@ -47,7 +47,6 @@ setuptools.setup(
         "argparse",
         "biopython",
         "cmake",
-        "foldcomp",
         "h5py",
         "hdf5plugin",
         "numpy<2", # pinned for openmm

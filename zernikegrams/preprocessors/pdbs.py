@@ -1,7 +1,6 @@
 import functools
 import os
 import signal
-import foldcomp
 import tempfile
 import stopit
 
@@ -156,6 +155,12 @@ class FoldCompPreprocessor:
         Takes the path to a foldcomp_file
         For example, data/afdb_rep_v4/afdb_rep_v4
         """
+        try:
+            import foldcomp
+        except ModuleNotFoundError as e:
+            logger.error("Foldcomp is not installed. Install with pip or bioconda")
+            raise e
+
         self.__data = foldcomp_file
         with foldcomp.open(self.__data) as db:
             self.size = len(db)
