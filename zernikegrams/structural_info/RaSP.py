@@ -48,7 +48,7 @@ class FirstDisorderedSelector(Bio.PDB.Select):
             not atom.is_disordered()
             or atom.get_altloc() == "A"
             or atom.get_altloc() == "1"
-        ) and atom.id[0] in ["C", "H", "N", "O", "S", "P"]
+        )
 
 
 class PDBFixerResIdentifiabilityIssue(Exception):
