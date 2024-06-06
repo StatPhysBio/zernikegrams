@@ -17,6 +17,7 @@ class CustomInstall(install):
     def install_reduce(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         reduce_path = os.path.join(dir_path, "zernikegrams/structural_info/reduce")
+        os.makedirs(reduce_path, exist_ok=True)
         dep_reduce_path = os.path.join(dir_path, "dependencies/reduce/reduce.zip")
         shutil.copyfile(dep_reduce_path, os.path.join(reduce_path, "reduce.zip"))
         
