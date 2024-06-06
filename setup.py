@@ -19,10 +19,10 @@ class CustomInstall(install):
         reduce_path = os.path.join(dir_path, "zernikegrams/structural_info/reduce")
         dep_reduce_path = os.path.join(dir_path, "dependencies/reduce/reduce.zip")
         shutil.copyfile(dep_reduce_path, os.path.join(reduce_path, "reduce.zip"))
+        
         os.chdir(reduce_path)
         subprocess.run(["unzip", "reduce.zip"])
         os.chdir(os.path.join(reduce_path, "reduce"))
-
         subprocess.run(["make"])
 
         os.chdir(dir_path)
