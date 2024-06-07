@@ -286,86 +286,39 @@ def structural_info(config: Dict) -> Tuple[List[str], Dict[str, List[str]]]:
     script = open(config["structural-info"]["template"], "r").read()
     structural_info_scripts = []
 
-    file_path = os.path.join(
-        config["structural-info"]["pdb_ids_path"], config["structural-info"]["pdb_ids"]
-    )
+    # file_path = os.path.join(
+    #     config["structural-info"]["pdb_ids_path"], config["structural-info"]["pdb_ids"]
+    # )
 
-    to_combine = {}
     for split in config["scripts"]["splits"]:
         i = 0
         file_idxs = config["scripts"]["splits"][split]["file_idx"]
-        for file_idx in file_idxs:
-            file = prepare_commands(file_path, {"split": split, "file_idx": file_idx})
-            n_lines = count_lines(file)
+        for i, file_idx in enumerate(file_idxs):
 
-            combine_key = f"{split}_{file_idx}_struct_NoiseNone.hdf5"
-            combine_key = os.path.join(f"{config['scripts']['tmp_path']}", os.path.basename(combine_key))
-            to_combine[combine_key] = []
+            replacement_dict = (
+                config["structural-info"]
+                | config["sbatch"]
+                | config["scripts"]
+                | config["scripts"]["commands"]
+                | {
+                    "split": split,
+                    "file_idx": file_idx,
+                    "i": i,
+                }
+            )
 
-            chunk_size = config["structural-info"]["chunk_size"]
-            for line_idx in range(1, n_lines + 1, chunk_size):
-                replacement_dict = (
-                    config["structural-info"]
-                    | config["sbatch"]
-                    | config["scripts"]
-                    | config["scripts"]["commands"]
-                    | {
-                        "split": split,
-                        "file_idx": file_idx,
-                        "line_idx": line_idx,
-                        "i": i,
-                    }
+            structural_info_scripts.append(
+                prepare_commands(
+                    prepare_apptainer(
+                        script,
+                        apptainer_invocation=config["apptainer"]["invocation"],
+                        prefix=config["scripts"]["prefix"]
+                    ),
+                    replacement_dict
                 )
-
-                structural_info_scripts.append(
-                    prepare_commands(
-                        prepare_apptainer(
-                            script,
-                            apptainer_invocation=config["apptainer"]["invocation"],
-                            prefix=config["scripts"]["prefix"]
-                        ),
-                        replacement_dict
-                    )
-                )
-
-                to_combine[combine_key].append(f"{config['scripts']['tmp_path']}/{split}_struct_{file_idx}_{line_idx}.hdf5")
-                i += 1
+            )
     
-    return structural_info_scripts, to_combine
-
-
-def combine_hdf5s(config: Dict, to_combine: Dict[str, List[str]]) -> None:
-
-    # Let filesystem update (???)
-    time.sleep(30)
-
-    with Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TextColumn("[progress.percentage]{task.percentage:>3.1f}%"),
-        TextColumn("[progress.completed]{task.completed}/{task.total} jobs"),
-        TimeRemainingColumn(),
-    ) as progress:
-
-        task: TaskID = progress.add_task("[green]combining structural info files", total=len(to_combine))
-
-        for consumer, producers in to_combine.items():
-            N = 0
-            for producer in producers:
-                with h5py.File(producer, "r") as f_in:
-                    dt_data = f_in["data"].dtype
-                    N += len(f_in["data"])
-
-            with h5py.File(consumer, "w") as f_out:
-                f_out.create_dataset("data", (N,), dtype=dt_data)
-                n = 0
-                for producer in producers:
-                    with h5py.File(producer, "r") as f_in:
-                        length = len(f_in["data"])
-                        f_out["data"][n : n + length] = f_in["data"][:]
-                        n += length
-
-            progress.update(task, advance=1)
+    return structural_info_scripts
 
 
 def neighborhoods_and_zernikegrams(config: Dict) -> List[str]:
@@ -412,16 +365,17 @@ def main():
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
-    for path in (config["scripts"]["tmp_path"], config["scripts"]["final_path"]):
-        if not os.path.exists(path):
-            os.makedirs(path)
+    # for path in (config["scripts"]["tmp_path"], config["scripts"]["final_path"]):
+    #     if not os.path.exists(path):
+    #         os.makedirs(path)
 
-    structural_info_scripts, to_combine = structural_info(config)
+    structural_info_scripts = structural_info(config)
     zgrams_scripts = neighborhoods_and_zernikegrams(config)
 
-    submit_and_await_batch(structural_info_scripts, name="structural info")
-    combine_hdf5s(config, to_combine)
-    submit_and_await_batch(zgrams_scripts, name="neighborhoods and zernikegrams")
+    print(structural_info_scripts[0])
+
+    # submit_and_await_batch(structural_info_scripts, name="structural info")
+    # submit_and_await_batch(zgrams_scripts, name="neighborhoods and zernikegrams")
 
 
 if __name__ == "__main__":

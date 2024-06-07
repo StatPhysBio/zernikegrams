@@ -28,9 +28,9 @@ scripts:
     structural_info: |
       conda activate zernikegrams && \
       structural-info \
-      --hdf5_out $tmp_path/${split}_struct_${file_idx}_${line_idx}.hdf5 \
+      --hdf5_out $tmp_path/${split}_${file_idx}_struct_NoiseNone.hdf5.hdf5 \
       --pdb_dir $pdb_dir \
-      --pdb_list_file $tmp_path/${split}_${file_idx}_${line_idx}.pdbs \
+      --pdb_list_file $data_path/$pdb_ids \
       --SASA \
       --charge \
       -F \
@@ -117,9 +117,6 @@ structural-info:
   # for example, [casp12_testing.txt, casp12_training__0.txt, ...]
   # should be casp12_{{split}}{{file_idx}}.txt
   pdb_ids: "casp12_{{split}}{{file_idx}}.txt"
-
-  # number of proteins per slurm job
-  chunk_size: 100
 
 add-noise:
   seeds: [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
