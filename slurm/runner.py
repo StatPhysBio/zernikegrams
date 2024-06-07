@@ -286,10 +286,6 @@ def structural_info(config: Dict) -> Tuple[List[str], Dict[str, List[str]]]:
     script = open(config["structural-info"]["template"], "r").read()
     structural_info_scripts = []
 
-    # file_path = os.path.join(
-    #     config["structural-info"]["pdb_ids_path"], config["structural-info"]["pdb_ids"]
-    # )
-
     for split in config["scripts"]["splits"]:
         i = 0
         file_idxs = config["scripts"]["splits"][split]["file_idx"]
@@ -365,17 +361,15 @@ def main():
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
-    # for path in (config["scripts"]["tmp_path"], config["scripts"]["final_path"]):
-    #     if not os.path.exists(path):
-    #         os.makedirs(path)
+    for path in (config["scripts"]["tmp_path"], config["scripts"]["final_path"]):
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     structural_info_scripts = structural_info(config)
     zgrams_scripts = neighborhoods_and_zernikegrams(config)
 
-    print(structural_info_scripts[0])
-
-    # submit_and_await_batch(structural_info_scripts, name="structural info")
-    # submit_and_await_batch(zgrams_scripts, name="neighborhoods and zernikegrams")
+    submit_and_await_batch(structural_info_scripts, name="structural info")
+    submit_and_await_batch(zgrams_scripts, name="neighborhoods and zernikegrams")
 
 
 if __name__ == "__main__":
