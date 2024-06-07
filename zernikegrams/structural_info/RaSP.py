@@ -55,12 +55,39 @@ class PDBFixerResIdentifiabilityIssue(Exception):
     pass
 
 
+def _step_0_remove_hydrogens(pdb_input_filename, temp0):
+    with open(pdb_input_filename, "r") as f:
+        lines = f.readlines()
+
+    atom_number_counter = 0
+    with open(temp0.name, "w") as f:
+
+        for line in lines:
+
+            if line[0:6] in ["ANISOU"]:
+                # change atom number in line with atom_number_counter
+                line = line[:6] + str(atom_number_counter).rjust(5) + line[11:]
+                f.write(line)
+
+            elif line[0:6] in ["ATOM  ", "HETATM"]:
+
+                if line[13] != "H":
+                    atom_number_counter += 1
+                    # change atom number in line with atom_number_counter
+                    line = line[:6] + str(atom_number_counter).rjust(5) + line[11:]
+                    f.write(line)
+
+    temp0.flush()
+    return temp0
+
+
 def _step_1_reduce(
     reduce_executable,
     pdb_input_filename,
     pdbid,
     temp1,
 ):
+
     # Add hydrogens using reduce program
     command = [
         reduce_executable,
@@ -76,6 +103,7 @@ def _step_1_reduce(
     with open(os.devnull, "w") as devnull:
         error_code = subprocess.Popen(command, stdout=temp1, stderr=devnull).wait()
     temp1.flush()
+
     first_model = PDB_PARSER.get_structure(pdbid, temp1.name)[0]
 
     return first_model
@@ -111,7 +139,7 @@ def _step_4_fix_numbering(fixer, temp3, temp4):
     structure_before = PDB_PARSER.get_structure(temp3.name, temp3.name)
     structure_after = PDB_PARSER.get_structure(temp4.name, temp4.name)
     residues_before = []
-    atoms_before = []
+    atoms_before = [  ]
     for chain in structure_before[0]:
         residues_before.append(chain.get_list())
         for res in chain:
@@ -202,36 +230,41 @@ def clean_pdb(pdb_input_filename: str, out_path: str, reduce_executable: str, hy
 
     pdbid = pdb_input_filename.split("/")[-1].split(".pdb")[0]
 
-    # Step 1: Add hydrogens using reduce program
-    with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp1:
-        if hydrogens:
-            first_model = _step_1_reduce(
-                reduce_executable, pdb_input_filename, pdbid, temp1
-            )
-        else:
-            first_model = PDB_PARSER.get_structure(pdbid, pdb_input_filename)[0]
+    # Step 0: remove hydrogen atoms if they already exist, since reduce will add duplicates and that can cause issues
+    with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp0:
+        temp0 = _step_0_remove_hydrogens(pdb_input_filename, temp0)
 
-        # Step 2: NonHetSelector filter
-        with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp2:
+        # Step 1: Add hydrogens using reduce program
+        with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp1:
 
-            if not extra_molecules:
-                PDBIO.set_structure(first_model)
-                PDBIO.save(temp2, select=NonHetSelector())
-                temp2.flush()
-                first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+            if hydrogens:
+                first_model = _step_1_reduce(
+                    reduce_executable, temp0.name, pdbid, temp1
+                )
             else:
-                PDBIO.set_structure(first_model)
-                PDBIO.save(temp2, select=FirstDisorderedSelector())
-                temp2.flush()
-                first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+                first_model = PDB_PARSER.get_structure(pdbid, temp0.name)[0]
 
-            # Step 3: Replace altloc chars to " " and use pdbfixer
-            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp3:
-                temp_3, fixer = _step_3_pdbfixer(first_model, temp3, hydrogens)
+            # Step 2: NonHetSelector filter
+            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp2:
 
-                # Step 4: Correct for pdbfixer not preserving insertion codes
-                with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp4:
-                    structure_after = _step_4_fix_numbering(fixer, temp3, temp4)
-                    with open(out_path, "w") as outpdb:
-                        PDBIO.set_structure(structure_after[0])
-                        PDBIO.save(outpdb)
+                if not extra_molecules:
+                    PDBIO.set_structure(first_model)
+                    PDBIO.save(temp2, select=NonHetSelector())
+                    temp2.flush()
+                    first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+                else:
+                    PDBIO.set_structure(first_model)
+                    PDBIO.save(temp2, select=FirstDisorderedSelector())
+                    temp2.flush()
+                    first_model = PDB_PARSER.get_structure(temp2.name, temp2.name)[0]
+
+                # Step 3: Replace altloc chars to " " and use pdbfixer
+                with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp3:
+                    temp_3, fixer = _step_3_pdbfixer(first_model, temp3, hydrogens)
+
+                    # Step 4: Correct for pdbfixer not preserving insertion codes
+                    with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp4:
+                        structure_after = _step_4_fix_numbering(fixer, temp3, temp4)
+                        with open(out_path, "w") as outpdb:
+                            PDBIO.set_structure(structure_after[0])
+                            PDBIO.save(outpdb)

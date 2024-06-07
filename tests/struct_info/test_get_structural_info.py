@@ -49,9 +49,11 @@ def test_secondary_structure_helix_matches_pyrosetta():
 
 
 def test_number_of_atoms_matches_pyrosetta():
+
     subprocess.run(
-        f"structural-info --pdb_dir tests/data/pdbs --pdb_list_file tests/data/pdbs/ids.txt -o {test_path} --S -c --DSSP -H".split()
+        f"structural-info --pdb_dir tests/data/pdbs --pdb_list_file tests/data/pdbs/ids.txt -o {test_path} --S -c -H -F".split()
     )
+
     with h5py.File(reference_path) as ref:
         ref_atoms = (
             (ref["data"]["elements"] != b"H") & (ref["data"]["elements"] != b"")
@@ -63,6 +65,13 @@ def test_number_of_atoms_matches_pyrosetta():
             (test["data"]["elements"] != b"H") & (test["data"]["elements"] != b"")
         ).sum()
         test_H = (test["data"]["elements"] == b"H").sum()
+    
+    print(ref_atoms, test_atoms)
+    print(ref_H, test_H)
 
     assert np.allclose([ref_atoms, ref_H], [test_atoms, test_H], rtol=MISMATCH_TOL)
     os.remove(test_path)
+
+
+if __name__ == '__main__':
+    test_number_of_atoms_matches_pyrosetta()
