@@ -118,3 +118,11 @@ def comma_sep_list_of_int_or_float_or_bool(astr: Union[str, None]) -> List[Union
             raise ValueError(f"cannot parse {item} into int, float, or bool")
 
     return ret_val
+
+
+def ast_parse(astr: Union[str, None]) -> Any:
+    if astr is None:
+        return None
+
+    import ast
+    return ast.literal_eval(astr)
