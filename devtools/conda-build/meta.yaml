@@ -1,5 +1,5 @@
 {% set name = "zernikegrams" %}
-{% set version = environ.get('GIT_DESCRIBE_TAG', 'tag.missing') %}
+{% set version = ${{ github.event.release.tag_name }} %}
 
 package:
   name: {{ name|lower }}
