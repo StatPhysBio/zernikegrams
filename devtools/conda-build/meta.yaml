@@ -2,10 +2,10 @@
 
 package:
   name: {{ name|lower }}
-  version: {{ github.event.release.tag_name }}
+  version: "{{ environ['GIT_DESCRIBE_TAG'] }}"
 
 source:
-  url: https://github.com/StatPhysBio/zernikegrams/archive/{{ github.event.release.tag_name }}.tar.gz
+  path: ../../
 
 build:
   entry_points:
