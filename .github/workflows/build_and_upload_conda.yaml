@@ -5,8 +5,6 @@ on:
   release:
     types: ['released', 'prereleased']
 
-workflow_dispatch: # allows us to trigger workflow manually
-
 jobs:
   conda_deployment_with_new_tag:
     name: Conda deployment of package with Python ${{ matrix.python-version }}
