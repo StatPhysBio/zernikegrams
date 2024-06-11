@@ -1,12 +1,11 @@
 {% set name = "zernikegrams" %}
-{% set version = github.event.release.tag_name %}
 
 package:
   name: {{ name|lower }}
-  version: {{ version }}
+  version: ${{ github.event.release.tag_name }}
 
 source:
-  url: https://github.com/StatPhysBio/zernikegrams/archive/{{ version }}.tar.gz
+  url: https://github.com/StatPhysBio/zernikegrams/archive/${{ github.event.release.tag_name }}.tar.gz
 
 build:
   entry_points:
