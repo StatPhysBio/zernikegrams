@@ -79,6 +79,16 @@ On every push to every branch, `.github/workflows/run-tests.yml` builds the repo
 
 On every release, `.github/workflows/build_and_upload_conda.yaml` runs, which updates the Anaconda repository. It was configured using [this tutorial](https://github.com/marketplace/actions/build-and-upload-conda-packages). In `devtools/` there is the `meta.yaml` file that conda uses to build the package.
 
+### Dependencies
+Dependencies come in two kinds: those that can be installed with conda and those that cannot. If the can't be installed with conda, they should be built from source (see below) or the user should be asked to install it themself. 
+
+Dependencies that are available through conda are listed in `devtools/conda-build/meta.yaml` under "requirements" > "run". To add a new dependency, simply add it to that list. If it's not available through conda-forge or the "defaults" conda channel, update `devtools/conda-envs/build_env.yaml` with the new channel, so that the automated testing and build process can find it. 
+
+### `pip` Dependencies
+Some packages are available through pip but not conda. Where possible, these should be avoided. Conda cannot install pip packages. One option is to ask users to install it themselves (e.g. we ask them to install foldcomp). Another is to use `grayskull` or a similar tool to convert a pip package to a conda package, and host it ourselves in the statphysbio Anaconda channel.
+
+As a last resort, we could put `pip install ...` in `pre-link.sh`. This is considered extremely bad practice. 
+
 ### Building Dependencies from Source
 Most Anaconda packages distribute compiled binaries, not source code. Due to limitations of GH Actions runners (e.g., no Linux arm support), it's problematic to rely on GH Actions to compile and distribute code that we need to build from source.
 
