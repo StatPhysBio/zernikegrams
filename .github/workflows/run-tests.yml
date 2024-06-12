@@ -20,6 +20,11 @@ jobs:
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
 
+
+    - name: Install DSSP
+      run: |
+        sudo apt-get install dssp || brew install brewsci/bio/dssp
+
     - name: Install Zernikegrams
       run: |
         conda install -y python=3.9
@@ -28,10 +33,6 @@ jobs:
         PREFIX=$HOME/local bash devtools/conda-build/pre-link.sh
         conda build devtools/conda-build --no-test --output-folder ./build -c conda-forge
         conda install zernikegrams -c ./build -c conda-forge
-
-    - name: Install DSSP
-      run: |
-        conda install dssp -c salilab
 
     - name: reinstall h5py
       run: |
