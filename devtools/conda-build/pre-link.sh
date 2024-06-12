@@ -2,7 +2,9 @@
 
 set -e
 
+mkdir -p $PREFIX
 touch $PREFIX/.messages.txt
+
 echo "PREFIX is $PREFIX" >> $PREFIX/.messages.txt
 
 # install reduce -- only available from source
