@@ -25,6 +25,7 @@ jobs:
         conda install -y python=3.9
         conda update conda
         conda install -y conda-build
+        PREFIX=$HOME/local bash devtools/conda-build/pre-link.sh
         conda build devtools/conda-build --output-folder ./build -c conda-forge
         conda install zernikegrams -c ./build -c conda-forge
         conda install dssp -c salilab
