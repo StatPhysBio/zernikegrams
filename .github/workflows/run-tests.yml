@@ -1,0 +1,53 @@
+name: Build from source and run tests
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+
+    - name: Add conda to system path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo $CONDA/bin >> $GITHUB_PATH
+
+    - name: Set up Homebrew for DSSP
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    - name: Install DSSP
+      run: |
+        brew install brewsci/bio/dssp
+
+    - name: Install Zernikegrams
+      run: |
+        conda install -y python=3.9
+        conda update conda
+        conda install -y conda-build
+        PREFIX=$HOME/local bash devtools/conda-build/pre-link.sh
+        conda build devtools/conda-build --no-test --output-folder ./build -c conda-forge
+        conda install zernikegrams -c ./build -c conda-forge
+
+    - name: reinstall h5py
+      run: |
+        echo "uninstalling and reinstalling h5py to avoid GH actions issues"
+        pip uninstall h5py -y
+        pip install h5py
+
+    - name: Install modern gcc
+      run: |
+        echo "Installing new GNU runtime so that openmm can find GLIBCXX_3.4.30"
+        conda install libstdcxx-ng -c conda-forge
+    
+    - name: Test with pytest
+      run: |
+        conda install pytest
+        pytest
