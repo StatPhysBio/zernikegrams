@@ -23,7 +23,7 @@ jobs:
 
     - name: Install DSSP
       run: |
-        sudo apt-get install dssp || brew install brewsci/bio/dssp
+        brew install brewsci/bio/dssp || sudo apt-get install dssp
 
     - name: Install Zernikegrams
       run: |
