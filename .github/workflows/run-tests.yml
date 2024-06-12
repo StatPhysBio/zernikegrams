@@ -27,7 +27,6 @@ jobs:
         conda install -y conda-build
         conda build devtools/conda-build --output-folder ./build -c conda-forge
         conda install zernikegrams -c ./build -c conda-forge
-        bash devtools/conda-build/pre-link.sh
         conda install dssp -c salilab
 
     - name: reinstall h5py

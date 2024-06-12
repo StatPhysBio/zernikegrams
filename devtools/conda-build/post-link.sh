@@ -12,6 +12,6 @@ mv reduce $PREFIX
 
 mkdir -p $PREFIX/build/reduce
 cd $PREFIX/build/reduce
-cmake $PREFIX/reduce
-make
-make install
+cmake $PREFIX/reduce >> $PREFIX/.messages.txt
+make >> $PREFIX/.messages.txt
+make install >> $PREFIX/.messages.txt
