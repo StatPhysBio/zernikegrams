@@ -32,7 +32,7 @@ jobs:
     - name: reinstall h5py
       run: |
         echo "uninstalling and reinstalling h5py to avoid GH actions issues"
-        pip uninstall h5py
+        pip uninstall h5py -y
         pip install h5py
     
     - name: Test with pytest
