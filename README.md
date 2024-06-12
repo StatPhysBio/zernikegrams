@@ -49,20 +49,24 @@ conda install zernikegrams -c ./build -c conda-forge --only-deps
 ```
 This installs the dependencies, but not zernikegrams itself. If the dependencies haven't changed since
 the latest release, you can also use `conda  install zernikegrams -c statphysbio -c conda-forge --only-deps`
-5. Build Reduce, the program for adding hydrogens. The easiest way to do this is with
+
+4. Build Reduce, the program for adding hydrogens. The easiest way to do this is with
 ```
 PREFIX=$HOME/local bash devtools/conda-build/pre-link.sh
 ```
 Which installs the reduce executable in $HOME/local/bin, where structural_info_core expects it. $PREFIX can be something
 other than $HOME/local, as long as it's not the current working directory. This will not change where reduce is installed, just where some
 temporary files live.
-6. Install zernikegrams
+
+5. Install zernikegrams
 ```
 pip install -e . -vv
 ```
 `-e` is for editable mode (changes take effect without reinstalling) and `-vv` is very verbose. Either can be changed.
-7. Optionally, install DSSP. This is only necessary for calculating secondary structure, but is needed for some tests. Use `conda install dssp -c salilab` or `brew install brewsci/bio/dssp` depending on your OS.
-8. Run `pytest` from the root directory--if everything passes, you're good to go!
+
+6. Optionally, install DSSP. This is only necessary for calculating secondary structure, but is needed for some tests. Use `conda install dssp -c salilab` or `brew install brewsci/bio/dssp` depending on your OS.
+  
+7. Run `pytest` from the root directory--if everything passes, you're good to go!
 
 ### Testing
 Tests should be run with `pytest` from the root directory. It is polite to include new tests with new code (if it can be reasonably tested) and to ensure that new code doesn't break old tests. Bug fixes should include at least one test that fails without the fix and passes with it.
@@ -80,7 +84,7 @@ Most Anaconda packages distribute compiled binaries, not source code. Due to lim
 
 Currently, the only example of this is Reduce. Our approach is to put the build-from-source code in `devtools/conda-build/pre-link.sh`, which conda automatically runs on every local machine when zernikegrams is installed. 
 
-Another great candidate for build-from-source would be DSSP (currently, users are responsible for getting it themselves), probably from the (PDB-REDO implementation)[https://github.com/PDB-REDO/dssp]. Note: I (William) have never been able to build this package from source--you'll know you're successful when you have a DSSP executable and can run `<executable> path-to-pdb-file` and the output looks reasonable. If you can do that, then in `structural_info_core`, find the call to `dssp_dict_from_pdb_file` and pass `DSSP=<executable-path>` as a key-word argument. 
+Another great candidate for build-from-source would be DSSP (currently, users are responsible for getting it themselves), probably from the [PDB-REDO implementation](https://github.com/PDB-REDO/dssp). Note: I (William) have never been able to build this package from source--you'll know you're successful when you have a DSSP executable and can run `<executable> path-to-pdb-file` and the output looks reasonable. If you can do that, then in `structural_info_core`, find the call to `dssp_dict_from_pdb_file` and pass `DSSP=<executable-path>` as a key-word argument. 
 
 In general: all of the binaries we compile should be installed in the same, **non-root**, location. Currently, `$HOME/local` seems reasonable. If the code we're compiling uses `cmake`, then `-DCMAKE_INSTALL_PREFIX=$HOME/local` should do that. 
 
