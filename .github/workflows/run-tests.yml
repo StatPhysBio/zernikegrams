@@ -20,10 +20,12 @@ jobs:
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
 
-
+    - name: Set up Homebrew for DSSP
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
     - name: Install DSSP
       run: |
-        brew install brewsci/bio/dssp || sudo apt-get install dssp
+        brew install brewsci/bio/dssp
 
     - name: Install Zernikegrams
       run: |
