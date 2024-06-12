@@ -30,7 +30,12 @@ from zernikegrams.structural_info.RaSP import clean_pdb
 
 logger = logging.getLogger(__name__)
 
-REDUCER = "reduce"
+REDUCER = os.path.join(
+    os.path.expanduser("~"),
+    "local",
+    "bin",
+    "reduce"
+)
 
 ##################### Copied from https://github.com/nekitmm/DLPacker/blob/main/utils.py
 # read in the charges from special file

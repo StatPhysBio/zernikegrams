@@ -10,13 +10,8 @@ export CMAKE_INSTALL_PREFIX=$HOME/local
 git clone https://github.com/rlabduke/reduce.git
 mv reduce $PREFIX
 
-echo "we are in $(pwd)" >> $PREFIX/.messages.txt
-
 mkdir -p $PREFIX/build/reduce
 cd $PREFIX/build/reduce
 cmake $PREFIX/reduce
 make
 make install
-
-echo "now we are in $(pwd)" >> $PREFIX/.messages.txt
-
