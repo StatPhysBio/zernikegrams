@@ -84,6 +84,8 @@ Dependencies come in two kinds: those that can be installed with conda and those
 
 Dependencies that are available through conda are listed in `devtools/conda-build/meta.yaml` under "requirements" > "run". To add a new dependency, simply add it to that list. If it's not available through conda-forge or the "defaults" conda channel, update `devtools/conda-envs/build_env.yaml` with the new channel, so that the automated testing and build process can find it. 
 
+These dependencies are automatically downloaded and installed when `conda install zernikegrams` is run. 
+
 ### `pip` Dependencies
 Some packages are available through pip but not conda. Where possible, these should be avoided. Conda cannot install pip packages. One option is to ask users to install it themselves (e.g. we ask them to install foldcomp). Another is to use `grayskull` or a similar tool to convert a pip package to a conda package, and host it ourselves in the statphysbio Anaconda channel.
 
