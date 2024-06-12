@@ -30,7 +30,7 @@ jobs:
         conda install dssp -c salilab
 
     - name: reinstall h5py
-    - run: |
+      run: |
         echo "uninstalling and reinstalling h5py to avoid GH actions issues"
         pip uninstall h5py
         pip install h5py
