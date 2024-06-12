@@ -4,6 +4,7 @@
 ```
 conda install zernikegrams -c statphysbio -c conda-forge
 ```
+This installs zernikegrams (our package) and it's dependencies in an existing conda environment. 
 
 ### Requirements
 Zernikegrams is distributed through the anaconda package manager, which provides most dependencies in most cases. Notable exceptions include:
