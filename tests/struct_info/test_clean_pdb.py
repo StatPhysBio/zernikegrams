@@ -1,5 +1,6 @@
 from Bio.PDB import PDBParser
 from zernikegrams.structural_info.RaSP import clean_pdb
+from zernikegrams.structural_info.structural_info_core import REDUCER
 import tempfile
 
 def count_element_atoms(pdb_file, element="H"):
@@ -21,7 +22,7 @@ def test_no_hydrogens_respected():
         clean_pdb(
             "tests/data/pdbs/1MBO.pdb",
             tmp.name,
-            "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
+            REDUCER,
             hydrogens=False,
             extra_molecules=False
         )
@@ -34,7 +35,7 @@ def test_yes_hydorgens_adds_H():
         clean_pdb(
             "tests/data/pdbs/1MBO.pdb",
             tmp.name,
-            "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
+            REDUCER,
             hydrogens=True,
             extra_molecules=False
         )
@@ -47,7 +48,7 @@ def test_no_extra_molecules_removes_FE():
         clean_pdb(
             "tests/data/pdbs/1MBO.pdb",
             tmp.name,
-            "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
+            REDUCER,
             hydrogens=False,
             extra_molecules=False
         )
@@ -60,7 +61,7 @@ def test_yes_extra_molecules_keeps_FE():
         clean_pdb(
             "tests/data/pdbs/1MBO.pdb",
             tmp.name,
-            "zernikegrams/structural_info/reduce/reduce/reduce_src/reduce",
+            REDUCER,
             hydrogens=False,
             extra_molecules=True
         )
