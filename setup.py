@@ -1,7 +1,4 @@
 import setuptools
-from setuptools.command.install import install
-import os
-import subprocess
 
 setuptools.setup(
     name="zernikegrams",

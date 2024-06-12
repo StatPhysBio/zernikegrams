@@ -2,6 +2,7 @@
 *.hdf5
 *.slurm
 
+build/
 reduce/
 
 # Byte-compiled / optimized / DLL files
