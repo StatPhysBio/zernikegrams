@@ -1,4 +1,4 @@
-name: Python Package using Conda
+name: Run tests
 
 on: [push]
 
@@ -14,10 +14,12 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.9'
+
     - name: Add conda to system path
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
+
     - name: Install Zernikegrams
       run: |
         conda install -y python=3.9
@@ -26,6 +28,12 @@ jobs:
         conda build devtools/conda-build --output-folder ./build -c conda-forge
         conda install zernikegrams -c ./build -c conda-forge
         conda install dssp -c salilab
+
+    - name: reinstall h5py
+    - run: |
+        echo "uninstalling and reinstalling h5py to avoid GH actions issues"
+        pip uninstall h5py
+        pip install h5py
     
     - name: Test with pytest
       run: |
