@@ -1,4 +1,4 @@
-name: Run tests
+name: Build from source and run tests
 
 on: [push]
 
@@ -34,6 +34,11 @@ jobs:
         echo "uninstalling and reinstalling h5py to avoid GH actions issues"
         pip uninstall h5py -y
         pip install h5py
+
+    - name: Install modern gcc
+      run: |
+        echo "Installing new GNU runtime so that openmm can find GLIBCXX_3.4.30"
+        conda install libstdcxx-ng -c conda-forge
     
     - name: Test with pytest
       run: |
