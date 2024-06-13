@@ -53,7 +53,7 @@ the latest release, you can also use `conda  install zernikegrams -c statphysbio
 
 4. Build Reduce, the program for adding hydrogens. The easiest way to do this is with
 ```
-PREFIX=$HOME/local bash devtools/conda-build/pre-link.sh
+PREFIX=$HOME/local bash devtools/conda-build/post-link.sh
 ```
 Which installs the reduce executable in $HOME/local/bin, where structural_info_core expects it. $PREFIX can be something
 other than $HOME/local, as long as it's not the current working directory. This will not change where reduce is installed, just where some
@@ -90,12 +90,12 @@ These dependencies are automatically downloaded and installed when `conda instal
 ### `pip` Dependencies
 Some packages are available through pip but not conda. Where possible, these should be avoided. Conda cannot install pip packages. One option is to ask users to install it themselves (e.g. we ask them to install foldcomp). Another is to use `grayskull` or a similar tool to convert a pip package to a conda package, and host it ourselves in the statphysbio Anaconda channel.
 
-As a last resort, we could put `pip install ...` in `pre-link.sh`. This is considered extremely bad practice. 
+As a last resort, we could put `pip install ...` in `post-link.sh`. This is considered extremely bad practice. 
 
 ### Building Dependencies from Source
 Most Anaconda packages distribute compiled binaries, not source code. Due to limitations of GH Actions runners (e.g., no Linux arm support), it's problematic to rely on GH Actions to compile and distribute code that we need to build from source.
 
-Currently, the only example of this is Reduce. Our approach is to put the build-from-source code in `devtools/conda-build/pre-link.sh`, which conda automatically runs on every local machine when zernikegrams is installed. 
+Currently, the only example of this is Reduce. Our approach is to put the build-from-source code in `devtools/conda-build/post-link.sh`, which conda automatically runs on every local machine when zernikegrams is installed. 
 
 Another great candidate for build-from-source would be DSSP (currently, users are responsible for getting it themselves), probably from the [PDB-REDO implementation](https://github.com/PDB-REDO/dssp). Note: I (William) have never been able to build this package from source--you'll know you're successful when you have a DSSP executable and can run `<executable> path-to-pdb-file` and the output looks reasonable. If you can do that, then in `structural_info_core`, find the call to `dssp_dict_from_pdb_file` and pass `DSSP=<executable-path>` as a key-word argument. 
 
