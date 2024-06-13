@@ -1,0 +1,6 @@
+name: docs
+channels:
+- statphysbio
+- conda-forge
+dependencies:
+  - zernikegrams
