@@ -1,0 +1,57 @@
+{% set name = "zernikegrams" %}
+
+package:
+  name: {{ name|lower }}
+  version: "{{ environ.get('GIT_DESCRIBE_TAG', 'versionNotFound') }}"
+
+source:
+  path: ../../
+
+build:
+  entry_points:
+    - structural-info = zernikegrams.structural_info.get_structural_info:main
+    - neighborhoods = zernikegrams.neighborhoods.get_neighborhoods:main
+    - zernikegrams = zernikegrams.holograms.get_holograms:main
+    - noise-neighborhoods = zernikegrams.add_noise.get_noised_nh:main
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv --no-deps
+  number: 0
+
+requirements:
+  host:
+    - python >=3.9
+    - pip
+  run:
+    - python >=3.9
+    - biopython
+    - cmake
+    - h5py
+    - hdf5plugin
+    - numpy >=1.21.6,<1.28.0 # pinned for scipy
+    - pdbfixer
+    - pyopencl
+    - pytest
+    - pytorch
+    - rich
+    - scikit-learn
+    - sqlitedict
+    - stopit
+    - pyyaml
+
+test:
+  imports:
+    - zernikegrams
+  commands:
+    - structural-info --help
+    - neighborhoods --help
+    - zernikegrams --help
+    - noise-neighborhoods --help
+  requires:
+    - pip
+
+about:
+  license: MIT
+
+extra:
+  recipe-maintainers:
+    - william-galvin
