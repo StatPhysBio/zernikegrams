@@ -1,5 +1,7 @@
+import numpy as np
 
 from zernikegrams.structural_info import get_structural_info_fn
+from zernikegrams.add_noise import add_noise
 from zernikegrams.neighborhoods import get_neighborhoods_fn
 from zernikegrams.holograms import get_holograms_fn
 
@@ -9,15 +11,19 @@ from typing import *
 def get_zernikegrams_from_pdbfile(pdbfile: str,
                                      get_structural_info_kwargs: Dict,
                                      get_neighborhoods_kwargs: Dict,
-                                     get_zernikegrams_kwargs: Dict):
+                                     get_zernikegrams_kwargs: Dict,
+                                     add_noise_kwargs: Dict = None):
 
     proteins = get_structural_info_fn(pdbfile, **get_structural_info_kwargs)
+
+    if add_noise_kwargs is not None:
+        if add_noise_kwargs['noise'] > 0:
+            rng = np.random.default_rng(add_noise_kwargs['noise_seed'])
+            for n in range(len(proteins)):
+                proteins[n] = add_noise(proteins[n], add_noise_kwargs['noise'], rng)
     
     neighborhoods = get_neighborhoods_fn(proteins, **get_neighborhoods_kwargs)
 
     zernikegrams = get_holograms_fn(neighborhoods, **get_zernikegrams_kwargs)
 
     return zernikegrams
-
-
-
