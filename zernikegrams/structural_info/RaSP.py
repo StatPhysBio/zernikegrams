@@ -76,6 +76,9 @@ def _step_0_remove_hydrogens(pdb_input_filename, temp0):
                     # change atom number in line with atom_number_counter
                     line = line[:6] + str(atom_number_counter).rjust(5) + line[11:]
                     f.write(line)
+                
+            else:
+                f.write(line)
 
     temp0.flush()
     return temp0
