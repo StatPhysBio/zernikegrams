@@ -24,7 +24,7 @@ requirements:
   run:
     - python >=3.9
     - biopython
-    - cmake >=3.32 # pinned for DSSP
+    - cmake >=3.23 # pinned for DSSP
     - cxx-compiler
     - git
     - h5py
