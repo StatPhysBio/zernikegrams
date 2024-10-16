@@ -24,10 +24,14 @@ make install >> $PREFIX/.messages.txt
 echo "installing DSSP" >> $PREFIX/.messages.txt
 [ -d "dssp" ] && rm -rf dssp
 <<<<<<< HEAD
+<<<<<<< HEAD
 git clone https://github.com/PDB-REDO/dssp.git $PREFIX/.messages.txt
 =======
 git clone https://github.com/PDB-REDO/dssp.git >> $PREFIX/.messages.txt
 >>>>>>> 278528f (build DSSP from source)
+=======
+git clone https://github.com/PDB-REDO/dssp.git $PREFIX/.messages.txt
+>>>>>>> 5015e27936458bd988d3a8d17e2d8d87fa334ea9
 [ -d "$PREFIX/dssp" ] && rm -rf dssp || mv dssp $PREFIX
 cd "$PREFIX/dssp"
 cmake -DCMAKE_INSTALL_PREFIX=$HOME/local -S . -B build >> $PREFIX/.messages.txt
