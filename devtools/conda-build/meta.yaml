@@ -25,6 +25,8 @@ requirements:
     - python >=3.9
     - biopython
     - cmake
+    - cxx-compiler
+    - git
     - h5py
     - hdf5plugin
     - numpy >=1.21.6,<1.28.0 # pinned for scipy
@@ -37,6 +39,7 @@ requirements:
     - sqlitedict
     - stopit
     - pyyaml
+    - zlib
 
 test:
   imports:

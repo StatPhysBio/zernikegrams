@@ -41,7 +41,7 @@ def test_secondary_structure_helix_matches_pyrosetta():
     for key, val in reference_ss.items():
         if val == b"H":
             total += 1
-            if test_ss[key] != b"H":
+            if key not in test_ss or test_ss[key] != b"H":
                 mismatches += 1
 
     assert mismatches < total * MISMATCH_TOL
