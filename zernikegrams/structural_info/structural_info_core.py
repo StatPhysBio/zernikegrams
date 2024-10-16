@@ -37,6 +37,20 @@ REDUCER = os.path.join(
     "reduce"
 )
 
+DSSP = os.path.join(
+    os.path.expanduser("~"),
+    "local",
+    "bin",
+    "mkdssp"
+)
+DSSP_VERSION = (
+    subprocess.run(
+        f"{DSSP} --version".split(), capture_output=True
+    )
+    .stdout.decode()
+    .strip(f"mkdssp version ")
+)
+
 ##################### Copied from https://github.com/nekitmm/DLPacker/blob/main/utils.py
 # read in the charges from special file
 CHARGES_AMBER99SB = defaultdict(lambda: 0)  # output 0 if the key is absent
@@ -329,23 +343,7 @@ def get_structural_info_from_protein__biopython(
         SASA.ShrakeRupley().compute(structure, level="A")
 
     if calculate_DSSP:
-        for dssp_name in ("mkdssp", "dssp"):
-            try:
-                version = (
-                    subprocess.run(
-                        f"{dssp_name} --version".split(), capture_output=True
-                    )
-                    .stdout.decode()
-                    .strip(f"{dssp_name} version ")
-                )
-                dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(
-                    pdb_file, dssp_version=version
-                )
-                break
-            except:
-                continue
-        else:
-            dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file)
+        dssp_dict, _dssp_keys = dssp_dict_from_pdb_file(pdb_file, DSSP=DSSP, dssp_version=DSSP_VERSION)
     else:
         dssp_dict = {}
 
