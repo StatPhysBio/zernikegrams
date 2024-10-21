@@ -9,9 +9,9 @@ from typing import *
 
 # @profile
 def get_zernikegrams_from_pdbfile(pdbfile: str,
-                                     get_structural_info_kwargs: Dict,
-                                     get_neighborhoods_kwargs: Dict,
-                                     get_zernikegrams_kwargs: Dict,
+                                     get_structural_info_kwargs: Dict = None,
+                                     get_neighborhoods_kwargs: Dict = None,
+                                     get_zernikegrams_kwargs: Dict = None,
                                      add_noise_kwargs: Dict = None):
 
     proteins = get_structural_info_fn(pdbfile, **get_structural_info_kwargs)
