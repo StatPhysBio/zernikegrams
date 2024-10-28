@@ -28,7 +28,7 @@ from zernikegrams.structural_info.structural_info_core import (
 logger = logging.getLogger(__name__)
 
 
-def parse_args():
+def get_parser():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -141,8 +141,10 @@ def parse_args():
         type=str,
         help="[Optional] Directory to save fixed pdb files, if -F or -H is selected"
     )
+    return parser
 
-    args = parser.parse_args()
+def parse_args():
+    args = get_parser().parse_args()
     if args.pdb_dir is None and args.foldcomp is None:
         msg = "pdb_dir or foldcomp must be set"
         logger.exception(msg)

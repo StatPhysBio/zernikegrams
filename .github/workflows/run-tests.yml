@@ -25,12 +25,11 @@ jobs:
 
     - name: Install Zernikegrams
       run: |
-        conda install -y python=3.10
+        conda install -y python=3.10 zlib=1.2.13 libzlib=1.2.13 -c conda-forge
         conda update conda
         conda install -y conda-build
-        PREFIX=$HOME/local bash devtools/conda-build/post-link.sh
-        conda build devtools/conda-build --no-test --output-folder ./build -c conda-forge
-        conda install zernikegrams -c ./build -c conda-forge
+        conda build devtools/conda-build --no-test --output-folder ./build -c statphysbio -c conda-forge -c bioconda
+        conda install zernikegrams -c ./build -c statphysbio -c conda-forge -c bioconda
 
     - name: reinstall h5py
       run: |

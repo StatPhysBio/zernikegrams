@@ -4,12 +4,13 @@
 ```
 conda install zernikegrams -c statphysbio -c conda-forge
 ```
-This installs zernikegrams (our package) and it's dependencies in an existing conda environment. 
-
+This installs zernikegrams (our package) and its dependencies in an existing conda environment. 
+Common issues:
+- *dssp requires libzlib >=1.3.1 but everything else requires libzlib <1.3* Fix: make sure to install with -c statphysbio before -c bioconda. statphysbio specifically builds a version of dssp for this reason! (But bio conda )
+  
 ### Requirements
 Zernikegrams is distributed through the anaconda package manager, which provides most dependencies in most cases. Notable exceptions include:
 - `foldcomp`, which is optional and only necessary if using `--foldcomp` with `structural-info`. If you are, you probably already have it installed, but you can install it with `pip install foldcomp` if not.
-- A modern GCC compiler. Most machines have one already, but if you see cryptic messages referencing "GLIBCXX_3.4.30 not found", try `conda install libstdcxx-ng -conda-forge` (if on Linux). 
 - `argparse`, which comes with almost all Python distributions, but (apparently) not all and is (apparently) not installable with conda. Try `pip install argparse`. 
 
 ### Supported Platforms
@@ -49,22 +50,13 @@ conda install zernikegrams -c ./build -c conda-forge --only-deps
 ```
 This installs the dependencies, but not zernikegrams itself. If the dependencies haven't changed since
 the latest release, you can also use `conda  install zernikegrams -c statphysbio -c conda-forge --only-deps`
-
-4. Build Reduce, the program for adding hydrogens. The easiest way to do this is with
-```
-PREFIX=$HOME/local bash devtools/conda-build/post-link.sh
-```
-Which installs the reduce executable in $HOME/local/bin, where structural_info_core expects it. $PREFIX can be something
-other than $HOME/local, as long as it's not the current working directory. This will not change where reduce is installed, just where some
-temporary files live.
-
-5. Install zernikegrams
+4. Install zernikegrams
 ```
 pip install -e . -vv
 ```
 `-e` is for editable mode (changes take effect without reinstalling) and `-vv` is very verbose. Either can be changed.
   
-6. Run `pytest` from the root directory--if everything passes, you're good to go!
+1. Run `pytest` from the root directory--if everything passes, you're good to go!
 
 ### Testing
 Tests should be run with `pytest` from the root directory. It is polite to include new tests with new code (if it can be reasonably tested) and to ensure that new code doesn't break old tests. Bug fixes should include at least one test that fails without the fix and passes with it.
@@ -73,7 +65,7 @@ Tests should be run with `pytest` from the root directory. It is polite to inclu
 If you would like your changes to be reflected in the latest version of the package that's pulled from conda, create a new release. In GitHub, find the "Releases" section (on the right) and follow the instructions. It's polite to version your release as [MAJOR.MINOR.PATCH](https://semver.org/) and provide a detailed description of updates. When you create a new version, a GitHub Actions script will run and (if successful) automatically update the Anaconda repository.
 
 ### GitHub Actions
-On every push to every branch, `.github/workflows/run-tests.yml` builds the repo from scratch using conda, configures the environment, installs DSSP, and runs `pytest`. If it passes, a green check mark shows up. Currently, we only test using python 3.9 on a Linux x86-64 machine. In the future, we might want to test on more Python versions and macos-13 (x86) and macos-latest (arm)--probably only on pushes to main--using `matrix`. 
+On every push to every branch, `.github/workflows/run-tests.yml` builds the repo from scratch using conda, configures the environment, and runs `pytest`. If it passes, a green check mark shows up. Currently, we only test using python 3.9 on a Linux x86-64 machine. In the future, we might want to test on more Python versions and macos-13 (x86) and macos-latest (arm)--probably only on pushes to main--using `matrix`. 
 
 On every release, `.github/workflows/build_and_upload_conda.yaml` runs, which updates the Anaconda repository. It was configured using [this tutorial](https://github.com/marketplace/actions/build-and-upload-conda-packages). In `devtools/` there is the `meta.yaml` file that conda uses to build the package.
 
@@ -91,10 +83,6 @@ As a last resort, we could put `pip install ...` in `post-link.sh`. This is cons
 
 ### Building Dependencies from Source
 Most Anaconda packages distribute compiled binaries, not source code. Due to limitations of GH Actions runners (e.g., no Linux arm support), it's problematic to rely on GH Actions to compile and distribute code that we need to build from source.
-
-Currently, the only example of this is Reduce. Our approach is to put the build-from-source code in `devtools/conda-build/post-link.sh`, which conda automatically runs on every local machine when zernikegrams is installed. 
-
-In general: all of the binaries we compile should be installed in the same, **non-root**, location. Currently, `$HOME/local` seems reasonable. If the code we're compiling uses `cmake`, then `-DCMAKE_INSTALL_PREFIX=$HOME/local` should do that. 
 
 ### Roadmap
 - Support MMFT files as well as .pdb files. Currently there is support for `foldcomp`, but not MMFT.
