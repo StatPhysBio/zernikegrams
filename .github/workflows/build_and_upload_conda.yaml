@@ -26,6 +26,11 @@ jobs:
           auto-update-conda: false
           auto-activate-base: false
           show-channel-urls: true
+      - name: Add conda channels
+        run: |
+          conda config --append channels statphysbio
+          conda config --append channels conda-forge
+          conda config --append channels bioconda
       - name: Build and upload the conda packages
         uses: uibcdf/action-build-and-upload-conda-packages@v1.3.0
         with:
