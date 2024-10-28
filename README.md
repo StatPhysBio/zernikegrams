@@ -2,11 +2,11 @@
 
 ## Installation
 ```
-conda install zernikegrams -c statphysbio -c conda-forge
+conda install zernikegrams -c statphysbio -c conda-forge -c bioconda
 ```
 This installs zernikegrams (our package) and its dependencies in an existing conda environment. 
 Common issues:
-- *dssp requires libzlib >=1.3.1 but everything else requires libzlib <1.3* Fix: make sure to install with -c statphysbio before -c bioconda. statphysbio specifically builds a version of dssp for this reason! (But bio conda )
+- *dssp requires libzlib >=1.3.1 but everything else requires libzlib <1.3* Fix: make sure to install with -c statphysbio before -c bioconda. statphysbio specifically builds a version of dssp for this reason! (But bio conda is still necessary for `reduce`)
   
 ### Requirements
 Zernikegrams is distributed through the anaconda package manager, which provides most dependencies in most cases. Notable exceptions include:
