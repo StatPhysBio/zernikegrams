@@ -58,6 +58,7 @@ about:
 
 extra:
   channels:
+    - statphysbio
     - conda-forge
     - bioconda
     - defaults
