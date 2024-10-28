@@ -30,19 +30,9 @@ from zernikegrams.structural_info.RaSP import clean_pdb
 
 logger = logging.getLogger(__name__)
 
-REDUCER = os.path.join(
-    os.path.expanduser("~"),
-    "local",
-    "bin",
-    "reduce"
-)
+REDUCER = "reduce"
 
-DSSP = os.path.join(
-    os.path.expanduser("~"),
-    "local",
-    "bin",
-    "mkdssp"
-)
+DSSP = "mkdssp"
 DSSP_VERSION = (
     subprocess.run(
         f"{DSSP} --version".split(), capture_output=True

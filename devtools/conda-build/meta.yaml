@@ -24,8 +24,7 @@ requirements:
   run:
     - python >=3.9
     - biopython
-    - cmake >=3.26 # pinned for DSSP
-    - cxx-compiler
+    - dssp
     - git
     - h5py
     - hdf5plugin
@@ -34,6 +33,7 @@ requirements:
     - pyopencl
     - pytest
     - pytorch
+    - reduce
     - rich
     - scikit-learn
     - sqlitedict
@@ -56,5 +56,9 @@ about:
   license: MIT
 
 extra:
+  channels:
+    - conda-forge
+    - bioconda
+    - defaults
   recipe-maintainers:
     - william-galvin
