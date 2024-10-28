@@ -130,9 +130,13 @@ def get_structural_info_from_protein__pyrosetta(
             element = pose.residue_type(i).element(j).name
             if calculate_SASA:
                 sasa = atom_sasa.get(atom_id)
+            else:
+                sasa = 0
             curr_coords = coords_rows[k]
             if calculate_charge:
                 charge_pyrosetta = pose.residue_type(i).atom_charge(j)
+            else:
+                charge_pyrosetta = 0
 
             res_id = np.array([
                 aa,

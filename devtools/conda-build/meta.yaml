@@ -25,7 +25,6 @@ requirements:
     - python >=3.9
     - biopython >=1.84
     - dssp
-    - git
     - h5py
     - hdf5plugin
     - numpy >=1.21.6,<1.28.0 # pinned for scipy

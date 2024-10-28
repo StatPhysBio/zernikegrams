@@ -52,6 +52,16 @@ def test_pyrosetta_flag():
     os.remove('sinfo_pyrosetta_default.hdf5')
     
 
+def test_pyrosetta_no_charge_and_sasa():
+    try:
+        import pyrosetta
+    except ModuleNotFoundError:
+        print("[warning] Cannot import pyrosetta -- skipping pyrosetta test")
+        return 
+
+    from zernikegrams.structural_info.pyrosetta_core import get_structural_info_from_protein__pyrosetta
+    get_structural_info_from_protein__pyrosetta("tests/data/pdbs/1bkx.pdb", False, False, False, False)
+
 if __name__ == '__main__':
     test_pyrosetta_flag()
         
