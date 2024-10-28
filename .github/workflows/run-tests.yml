@@ -20,6 +20,9 @@ jobs:
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
 
+    - name: Install cmake dependency
+      run: sudo apt-get install librhash-dev
+
     - name: Install Zernikegrams
       run: |
         conda install -y python=3.10 zlib=1.2.13 libzlib=1.2.13 -c conda-forge
