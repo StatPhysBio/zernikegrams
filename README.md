@@ -2,10 +2,12 @@
 
 ## Installation
 ```
-conda install zernikegrams -c statphysbio -c conda-forge -c bioconda
+conda install zernikegrams -c statphysbio -c conda-forge
 ```
 This installs zernikegrams (our package) and its dependencies in an existing conda environment. 
-
+Common issues:
+- *dssp requires libzlib >=1.3.1 but everything else requires libzlib <1.3* Fix: make sure to install with -c statphysbio before -c bioconda. statphysbio specifically builds a version of dssp for this reason! (But bio conda )
+  
 ### Requirements
 Zernikegrams is distributed through the anaconda package manager, which provides most dependencies in most cases. Notable exceptions include:
 - `foldcomp`, which is optional and only necessary if using `--foldcomp` with `structural-info`. If you are, you probably already have it installed, but you can install it with `pip install foldcomp` if not.
