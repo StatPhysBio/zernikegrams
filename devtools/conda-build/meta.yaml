@@ -23,7 +23,7 @@ requirements:
     - pip
   run:
     - python >=3.9
-    - biopython
+    - biopython >=1.84
     - dssp
     - git
     - h5py
