@@ -40,6 +40,7 @@ requirements:
     - stopit
     - pyyaml
     - zlib <1.3 # pinned for pyrosetta
+    - libzlib < 1.3 # pinned for pyrosetta
 
 test:
   imports:
