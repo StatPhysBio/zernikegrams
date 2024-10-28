@@ -22,7 +22,7 @@ jobs:
 
     - name: Install Zernikegrams
       run: |
-        conda install -y python=3.10
+        conda install -y python>=3.9
         conda update conda
         conda install -y conda-build
         conda build devtools/conda-build --no-test --output-folder ./build -c conda-forge -c bioconda
