@@ -71,7 +71,7 @@ def _step_0_remove_hydrogens(pdb_input_filename, temp0):
 
             elif line[0:6] in ["ATOM  ", "HETATM"]:
 
-                if line[13] != "H":
+                if line[77] != "H": # 77 is the element column; used to be 13 for the middle of the atom name, but that's not reliable
                     atom_number_counter += 1
                     # change atom number in line with atom_number_counter
                     line = line[:6] + str(atom_number_counter).rjust(5) + line[11:]
