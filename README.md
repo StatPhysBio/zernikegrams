@@ -42,7 +42,7 @@ from zernikegrams.holograms.get_holograms import get_single_zernikegram
 
 ## Development
 ### Building locally
-1. Clone this repo
+1. Clone this repo and navigate to it
 2. If necessary, install conda-build with `conda install conda-build`
 3. Install the dependencies for this repo with 
 ```
